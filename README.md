@@ -187,3 +187,23 @@ def proof_of_being_a_person(
   //end..
 }
 ```
+
+### Problems
+
+1. The rate of adding identities, the problem being frequent changes of Merkle Tree Roots, and how long it takes to generate zkp proof, and block generation time.
+2. Someone stole $K^{-1}$ before we registered on *IdentityBlockchain*. The Thief registered $K$ and $P$, and who knows what else.
+3. Someone stole $K^{-1}$ after we registered on *IdentityBlockchain*.
+4. Trying to use unregistered Key.
+5. Trying to register the same $Pin$ with multiple Keys (e.g. two physical ids).
+6. Using $P$ without checking the whole $CA\rightarrow K\rightarrow P$ chain.
+    - Using $P$ to register as a mining key.
+    - Invalidating $P$.
+    - Using $P_{new}$ as a mining key.
+
+    **Solution**: Look at the solution to Problem 7. The Mining Registry can accept new $P$s after an expiration period (which can also be e.g. 1 day).
+
+7.  A combination of Problem 2 and Problem 6. Someone steals $K$, registeres $P$ and registeres $P$ for mining. The problem is bigger, because we can't invalidate $P$ if we don't know which $P$ it is.
+
+    **Solution**: We make $P$ renewable. We write the last block number it was renewed on to the *IdentityBlockchain*. Mining Registry can choose to accept $P$ which is not older than some time period (for the Registry a good period would seem to be 1 day). When paying the miners, the Registry also requires proof of $P$'s age. $K$ is easely invalidated, because there is an explicit $Pin \rightarrow K^{-1}$ mapping on the blockchain, so it doesn't need to be renewable in the sence to proove it is still valid.
+
+8. Only $P$ is compromised.
