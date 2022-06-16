@@ -200,7 +200,7 @@ def proof_of_being_a_person(
     - Invalidating $P$.
     - Using $P_{new}$ as a mining key.
 
-    **Solution**: Look at the solution to Problem 7. The Mining Registry can accept new $P$s after an expiration period (which can also be e.g. 1 day).
+    **Solution**: Look at the solution to Problem 7. The Mining Registry can accept new $P$'s after an expiration period (which can also be e.g. 1 day).
 
 7.  A combination of Problem 2 and Problem 6. Someone steals $K$, registeres $P$ and registeres $P$ for mining. The problem is bigger, because we can't invalidate $P$ if we don't know which $P$ it is.
 
