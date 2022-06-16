@@ -16,7 +16,7 @@ The material that follows is under construction, bit it can offer a glimpse into
 
 | Symbol      | Meaning     |
 | :---        |    :----  |
-| $K$      | State CA certified public key of e.g. eID       |
+| $K$      | State CA (Certificate Authority) certified public key of e.g. eID       |
 | $K(value)$   | value encrypted with the public key $K$        |
 | $K^{-1}$ | Private key corresponding to the public key $K$    |
 | $P$ | Person key, used to access IdentityBlockchain as an unknown Person    |
