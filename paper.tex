@@ -1,0 +1,297 @@
+\documentclass{article}
+%\documentclass[twocolumn]{article}%
+\usepackage[utf8]{inputenc}%
+\usepackage{standalone}%
+\usepackage{amsmath}%
+\usepackage{amsthm}%
+\usepackage{amssymb}%
+\usepackage{hyperref}%
+\usepackage{xcolor}%
+\usepackage{tabularx}%
+\usepackage{listings}%
+\lstdefinestyle{b}{basicstyle=\tiny\ttfamily}
+\lstset{
+  showspaces=false,
+  showstringspaces=false
+  }
+
+% Add your keywords here, and have this in a separate file
+% and include it in your preamble
+\lstset{emph={%
+    function, uint256, public, mapping,contract,bytes,bool, if, for,
+    field, private, def, import, assert, require, zksnarkverify %
+},emphstyle={\color{blue}\bfseries}%
+}
+
+%\definecolor{keywords}{HTML}{8A4A0B}
+%
+%\definecolor{background}{HTML}{EEEEEE}
+%
+%\lstset{language=[LaTeX]Tex,
+%    keywordstyle=\color{keywords},
+%    keywordstyle=[2]\color{red},
+%    keywordstyle=[3]\color{orange},
+%    basicstyle=\normalfont\ttfamily,
+%    showstringspaces=false,
+%    frameround=ftff,
+%    frame=lines,
+%    morekeywords={RequirePackage,ProvidesPackage},
+%    keywords=[2]{Some,Other,Keywords},
+%    keywords=[3]{and,another,test},
+%    backgroundcolor=\color{background}
+%}
+
+\newcommand{\khk}{$P$}
+\newcommand{\khkp}{$K^{-1}[\text{HK}]$}
+\newcommand{\identity}{\textit{Identity}}
+%\newcommand{\kid}{$K[\text{\identity}]$}
+\newcommand{\kid}{$K$}
+\newcommand{\todo}[1]{\fbox{\parbox{\linewidth}{\textcolor{red}{#1}}}}
+\newcommand{\iv}{$IV(\text{\identity})$}
+\newcommand{\sigid}{$K^{-1}[CA](K[Identity])$}
+\newtheorem{problem}{Problem}
+\newenvironment{solution}
+  {\emph{Solution:}}
+  {\hfill $\square$}
+\newcommand{\pbc}{\textit{PeopleBC}}
+
+\title{Proof of Identity}
+\author{Albert Vučinović, University North}
+\begin{document}
+\maketitle
+\section{Notation}
+\begin{tabular}{p{0.36\linewidth}|p{0.55\linewidth}}
+	\kid &  State CA certified public key of e.g. eID\\
+	$K(value)$ & $value$ encrypted with the public key $K$. \\
+	$\kid^{-1}$ & Private key corresponding to the public key $K$. \\
+  \khk & Person key, used to access PeopleBC as an unknown Person. \\
+  $H$ & SHA256 \\
+\end{tabular}
+
+\newpage
+\section{Registering \khk{} (Person key)}
+\begin{enumerate}
+  \item Use \kid{} to sign "PeopleBC", $K_1 = \kid^{-1}("registerK")$.
+  \begin{enumerate}
+    \item Entities who know \kid{} (e.g. CA that issued it) can know that the Person is using PeopleBC, and what identification document the Person is using.
+  \end{enumerate}
+  \item Register \kid{} on \pbc, by calling 
+    $$registerK(Pin, K_1, proofPinOwnsK)$$.
+  \item Register \khk{} on \pbc, by calling 
+    $$registerP(PinK, PinKP, proof)$$
+  where:
+    \begin{enumerate}
+      \item $K_2=\kid^{-1}("registerP")$
+      \item $PinK=H(Pin,K_2)$
+      \item $P_1 = \khk^{-1}("registerP")$
+      \item $PinKP=H(Pin, K_2, P_1)$
+    \end{enumerate}
+\end{enumerate}
+
+\newpage
+\section{On chain code}
+\begin{lstlisting}[language=C, frame=single, style=b]
+//pseudo Solidity
+//Key is eID private key, or PrivateeIDKey("")
+//PersonKey is Blockchain key used by a Person
+contract IdentitiesManager {
+  //all the mappings are mappings where uint256 is a hash!
+  mapping(uint256 => uint256) public PinKUsed;
+  mapping(uint256 => uint256) public PinKPUsed;
+  mapping(uint256 => uint256) public PinKPLastConfirmed;
+  mapping(uint256 => bool) public PInvalid;
+  mapping(uint256 => bool) public KInvalid;
+  //TODO:CA fields!
+
+  //K_1=K_1("registerK")
+  //Pin=H(Pin)
+  function registerK public(
+    uint256 Pin,
+    uint256 K_1,
+    bytes proofPinOwnsK
+  ){
+    uint256 previousKey = PinKUsed[Pin];
+    if(previouseKey == K_1)
+      return;
+    bool isOwner = zksnarkverify(VK, [
+        PIN, 
+        K_1
+      ],
+      proofPINOwnsK);
+    if(isOwner && ! KInvalid[K_1]){
+      if(previousKey!=0)
+        KInvalid[previousKey]=true;
+      PinKUsed[Pin]=K_1;
+    }
+  }
+
+  //PinK=H(Pin, K_1("registerP")) which is != H(Pin, K_1("registerK"))
+  //PinK can not be connected to Pin, unless one knows K_1
+  function registerP public(
+    uint256 PinK,
+    uint256 PinKP,
+    bytes proof
+  ){
+    uint256 previousKey = PinKPUsed[PinK]
+    if(previousKey == PinK)
+      return; //already registered
+
+    //zkp(
+      //K!invalid
+        //?Need KInvalid to be Zero Knowledge Set (ZKS), and to get roots
+      //CA!invalid
+      //CA -> K -> Pin
+      //PinK=H(Pin, K_1("registerP"))
+      //PinKP=H(Pin, K_1("registerP"), P_1("registerP"))
+    //)
+    bool ok = zksnarkverify(VK, [
+    ], proof);
+
+    if(ok && ! PInvalid[PinKP]){
+      if(previousKey != 0)
+        PInvalid[previousKey]=true;
+      PinKPUsed[PinK]=PinKP;
+      PinKPLastConfirmed[PinK]=block.number;
+    }
+
+  }
+
+}
+
+contract PersonAccount{
+}
+\end{lstlisting}
+
+\newpage
+\section{zkp code}
+\begin{lstlisting}[language=C, frame=single, style=b]
+//pseudo zokrates zk-SNARK
+import "hashes/sha256/512bitPacked" as sha256packed
+import "ecc/babyjubjubParams.code" as context
+import "ecc/proofOfOwnership.code" as proofOfOwnership
+
+def proofPINOwnsK(
+  field[2] PINHash,
+  field[2] K_1Hash,
+  field[2] 
+
+  private field[?] CACert){
+}
+
+def proof_of_being_a_person(
+  //publically known arguments
+  field[2] PINKeyUsedHash,
+  field[2] PINKeyPersonKeyIssuedHash,
+  field[2] PersonKeyInvalidHash,
+  field[2] KeyInvalidHash,
+
+  //BC state
+  field BC_PINUsed,//BC State
+  field BC_PINKeyUsed,//BC State
+  field BC_PINKeyPersonKeyIssued,//BC State
+  field BC_PersonKeyInvalid,//BC State
+  field BC_KeyInvalid,//BC State
+  ?field BC_private_key_challenge?
+
+  //CA keys!
+  field[?][?] CAKeys,//? BC State
+  ...
+
+  //private data
+  //15360 bit RSA key is equivalent to 256-bit symmetric keys
+  //2048 bit RSA key is equivalent to 112 bit symmetric keys
+  //eID has 2048 bit RSA
+  private field PIN,//max 254 bits, using only 128 = 16 bytes
+  private field K_private_bc_new,//ECC private key
+  private field[?] K_new,//public RSA key from eID
+  private field[?] K_1_new,//private RSA key from eID, actually signed message
+  //K_1_new("PeopleBC person proof")
+  private field K_private_bc_old,//ECC private key, old
+  private field[?] K_1_old)//K_1_old("PeopleBC person proof")?
+  //?private field[2] K_bc_new,//ECC public key ?no need for key pair verification?
+  //?private field[2] K_bc_old,//ECC public key ?no need for key pair verification
+  private field[?] CAcert,
+  private field CAindex
+{
+  //actual checking code here
+  field[2] hash_PIN = sha256packed([0,0,0,PIN])
+  assert(hash_PIN == PINHash);//proving that we know the real PIN, unimportant
+
+  //proving ownership of newly registered key, 
+  //no real need to prove ownership of bc key
+  //we actually need to prove ownereship of K_1_new, 
+  //and its connection to PIN via CA
+  context=context()//babyjubjubParams context
+  proofOfOwnership(K_bc_new, K_private_bc_new, context)==1
+
+  //prove that you own the K_new
+  //pseudo
+  RSADecrypt(K_new, K_1_new) == "PeopleBC Person Proof";//?+BC_private_key_challenge;
+
+  //proove that Key is connected to CA
+  //pseudo
+  checkCASignature(CAKey[CAindex], CACert, K_new) == 1;
+  
+  //proove that K_new is PIN certificate
+  //pseudo
+  extractPIN(CACert)==PIN;
+  
+  //end
+
+  //end..
+}
+\end{lstlisting}
+\newpage
+\section{Problems}
+\begin{problem}
+  The rate of adding identities, the problem being frequent changes of Merkle Tree Roots, and how long it takes to generate zkp proof, and block generation time.
+\end{problem}
+\begin{problem}
+\label{prob:bigsteal}
+  Someone stole $K^{-1}$ before we registered on \pbc.
+  The Thief registered $K$ and $P$, and who knows what else.
+\end{problem}
+\begin{solution}
+\end{solution}
+\begin{problem}
+  Someone stole $K^{-1}$ after we registered on \pbc.
+\end{problem}
+\begin{problem}
+Trying to use unregistered Key.
+\end{problem}
+\begin{solution}
+\end{solution}
+\begin{problem}
+Trying to register the same PIN with multiple Keys (e.g. two physical ids).
+\end{problem}
+\begin{problem}
+\label{prob:chain}
+  Using $P$ without checking the whole $CA\rightarrow K\rightarrow P$ chain.
+  \begin{itemize}
+    \item Using $P$ to register as a mining key.
+    \item Invalidating $P$.
+    \item Using $P_{new}$ as a mining key.
+  \end{itemize}
+\end{problem}
+\begin{solution}
+  Look at the solution to Problem \ref{prob:miningKey}.
+
+  The Mining Registry can accept new $P$s after an expiration period (which can also be e.g. 1 day).
+\end{solution}
+\begin{problem}
+\label{prob:miningKey}
+  A combination of Problem \ref{prob:bigsteal} and Problem \ref{prob:chain}.
+  Someone steals $K$, registeres $P$ and registeres $P$ for mining.
+  The problem is bigger, because we can't invalidate $P$ if we don't know which $P$ it is.
+\end{problem}
+\begin{solution}
+  We make $P$ renewable. We write the last block number it was renewed on to the blockchain.
+  Mining Registry can choose to accept P which is not older than some time period (for the Registry a good period would seem to be 1 day).
+  When paying the miners, the Registry also requires proof of $P$'s age.
+
+  $K$ is easely invalidated, because there is an explicit $PIN \rightarrow K^{-1}$ mapping on the blockchain, so it doesn't need to be renewable in the sence to proove it is still valid.
+\end{solution}
+\begin{problem}
+  Only $P$ compromised.
+\end{problem}
+\end{document}
