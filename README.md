@@ -24,7 +24,7 @@ The material that follows is under construction, bit it can offer a glimpse into
 
 ### Registering P
 
-1. Use $K$ to sign *IdentityBlockchain*: $$K_1 = K^{-1}(registerK).$$ Entities who know $K$ (e.g. CA that issued it) can know that the Person is using *IdentityBlockchain*, and what identification document the Person is using.
+1. Use $K$ to sign *IdentityBlockchain*: $$K_1 = K^{-1}(registerK).$$ Entities that know $K$ (e.g. CA that issued it) can know that the Person is using *IdentityBlockchain*, and which identification document the Person is using.
   
 2. Register $K$ on *IdentityBlockchain*, by calling $$registerK(Pin, K_1, proofPinOwnsK).$$
 
@@ -190,7 +190,7 @@ def proof_of_being_a_person(
 
 ### Problems
 
-1. The rate of adding identities, the problem being frequent changes of Merkle Tree Roots, and how long it takes to generate zkp proof, and block generation time.
+1. The rate of addition of identities, the problems of frequent changes of Merkle Tree Roots, and how long it takes to generate zkp proof, and block generation time.
 2. Someone stole $K^{-1}$ before we registered on *IdentityBlockchain*. The Thief registered $K$ and $P$, and who knows what else.
 3. Someone stole $K^{-1}$ after we registered on *IdentityBlockchain*.
 4. Trying to use unregistered Key.
@@ -202,8 +202,8 @@ def proof_of_being_a_person(
 
     **Solution**: Look at the solution to Problem 7. The Mining Registry can accept new $P$'s after an expiration period (which can also be e.g. 1 day).
 
-7.  A combination of Problem 2 and Problem 6. Someone steals $K$, registeres $P$ and registeres $P$ for mining. The problem is bigger, because we can't invalidate $P$ if we don't know which $P$ it is.
+7.  A combination of Problem 2 and Problem 6. Someone steals $K$, registeres $P$, and registers $P$ for mining. The problem is bigger because we can't invalidate $P$ if we don't know which $P$ it is.
 
-    **Solution**: We make $P$ renewable. We write the last block number it was renewed on to the *IdentityBlockchain*. Mining Registry can choose to accept $P$ which is not older than some time period (for the Registry a good period would seem to be 1 day). When paying the miners, the Registry also requires proof of $P$'s age. $K$ is easely invalidated, because there is an explicit $Pin \rightarrow K^{-1}$ mapping on the blockchain, so it doesn't need to be renewable in the sence to proove it is still valid.
+    **Solution**: We make $P$ renewable. We write the last block number it was renewed on to the *IdentityBlockchain*. Mining Registry can choose to accept $P$ that is not older than some time period (for the Registry a good period would seem to be 1 day). When paying the miners, the Registry also requires proof of $P$'s age. $K$ can be easily invalidated because there is an explicit $Pin \rightarrow K^{-1}$ mapping on the blockchain, so it doesn't need to be renewable (in the sense to prove it is still valid).
 
 8. Only $P$ is compromised.
