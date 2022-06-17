@@ -168,7 +168,7 @@ def proof_of_being_a_person(
   //no real need to prove ownership of bc key
   //we actually need to prove ownereship of K_1_new,
   //and its connection to PIN via CA
-  context=context()//Params context
+  context=context()//babyjubjubParams context
   proofOfOwnership(K_bc_new, K_private_bc_new, context)==1
 
   //prove that you own the K_new
