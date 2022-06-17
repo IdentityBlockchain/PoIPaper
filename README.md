@@ -16,11 +16,12 @@ The material that follows is under construction, bit it can offer a glimpse into
 
 | Symbol      | Meaning     |
 | :---        |    :----  |
-| $K$      | State CA (Certificate Authority) certified public key of e.g. eID       |
-| $K(value)$   | value encrypted with the public key $K$        |
-| $K^{-1}$ | Private key corresponding to the public key $K$    |
-| $P$ | Person key, used to access IdentityBlockchain as an unknown Person    |
+| $Key(value)$   | value encrypted with the public key $Key$        |
+| $Key^{-1}$ | Private key corresponding to the public key $Key$    |
 | $H$ | SHA256    |
+| $K$      | State CA (Certificate Authority) certified public key of e.g. eID       |
+| $P$ | Person key, used to access IdentityBlockchain as an unknown Person    |
+
 
 ### Registering P
 
