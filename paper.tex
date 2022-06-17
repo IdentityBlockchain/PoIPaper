@@ -45,7 +45,7 @@
 \newcommand{\khkp}{$K^{-1}[\text{HK}]$}
 \newcommand{\identity}{\textit{Identity}}
 %\newcommand{\kid}{$K[\text{\identity}]$}
-\newcommand{\kid}{$Kid$}
+\newcommand{\kid}{$K$}
 \newcommand{\todo}[1]{\fbox{\parbox{\linewidth}{\textcolor{red}{#1}}}}
 \newcommand{\iv}{$IV(\text{\identity})$}
 \newcommand{\sigid}{$K^{-1}[CA](K[Identity])$}
@@ -61,11 +61,11 @@
 \maketitle
 \section{Notation}
 \begin{tabular}{p{0.36\linewidth}|p{0.55\linewidth}}
-	\kid &  State CA certified public key of e.g. eID\\
-	$K(value)$ & $value$ encrypted with the public key $K$. \\
-	$\kid^{-1}$ & Private key corresponding to the public key $K$. \\
-  \khk & Person key, used to access PeopleBC as an unknown Person. \\
+	$Key(value)$ & $value$ encrypted with a public key $Key$. \\
+	$Key^{-1}$ & Private key corresponding to a public key $Key$. \\
   $H$ & SHA256 \\
+	\kid &  State CA certified public key of e.g. eID\\
+  \khk & Person key, used to access PeopleBC as an unknown Person. \\
 \end{tabular}
 
 \newpage
