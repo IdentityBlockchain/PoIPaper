@@ -126,7 +126,7 @@ def proofPINOwnsK(
 }
 
 def proof_of_being_a_person(
-  //publically known arguments
+  //publicly known arguments
   field[2] PINKeyUsedHash,
   field[2] PINKeyPersonKeyIssuedHash,
   field[2] PersonKeyInvalidHash,
@@ -168,18 +168,18 @@ def proof_of_being_a_person(
   //no real need to prove ownership of bc key
   //we actually need to prove ownereship of K_1_new,
   //and its connection to PIN via CA
-  context=context()//babyjubjubParams context
+  context=context()//Params context
   proofOfOwnership(K_bc_new, K_private_bc_new, context)==1
 
   //prove that you own the K_new
   //pseudo
   RSADecrypt(K_new, K_1_new) == "PeopleBC Person Proof";//?+BC_private_key_challenge;
 
-  //proove that Key is connected to CA
+  //prove that Key is connected to CA
   //pseudo
   checkCASignature(CAKey[CAindex], CACert, K_new) == 1;
 
-  //proove that K_new is PIN certificate
+  //prove that K_new is PIN certificate
   //pseudo
   extractPIN(CACert)==PIN;
 
