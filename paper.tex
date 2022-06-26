@@ -133,8 +133,6 @@ Sometimes we write $K$ for $(K, K^{-1})$.
 \section{On chain code}
 \begin{lstlisting}[language=C, frame=single, style=b]
 //pseudo Solidity
-//Key is eID private key, or PrivateeIDKey("")
-//PersonKey is Blockchain key used by a Person
 contract IdentitiesManager {
   //all the mappings are mappings where uint256 is a hash!
   mapping(uint256 => uint256) public NinKidUsed;
@@ -144,55 +142,56 @@ contract IdentitiesManager {
   mapping(uint256 => bool) public KidInvalid;
   //TODO:CA fields!
 
+  //hNin=H(Nin)
   //vKid=KidPrivate("registerKid")
-  //Nin=H(Nin)
   function registerKid public(
-    uint256 Nin,
+    uint256 hNin,
     uint256 vKid,
     bytes proofNinOwnsKid
   ){
-    uint256 previousKey = NinKidUsed[Nin];
+    uint256 previousKey = NinKidUsed[hNin];
     if(previousKey == vKid)
       return;
     bool isOwner = zksnarkverify(VK, [
-        Nin, 
+        hNin, 
         vKid
       ],
       proofPINOwnsKid);
     if(isOwner && ! KidInvalid[vKid]){
       if(previousKey!=0)
         KidInvalid[previousKey]=true;
-      NinKidUsed[Nin]=vKid;
+      NinKidUsed[hNin]=vKid;
     }
   }
 
-  //PinK=H(Pin, K_1("registerP")) which is != H(Pin, K_1("registerK"))
-  //PinK can not be connected to Pin, unless one knows K_1
-  function registerP public(
-    uint256 PinK,
-    uint256 PinKP,
+  //look into the paper.pdf for meaning of args
+  function registerKp public(
+    uint256 NinKid,
+    uint256 NinKidKp,
     bytes proof
   ){
-    uint256 previousKey = PinKPUsed[PinK]
-    if(previousKey == PinK)
+    uint256 previousKey = NinKidKpUsed[NinKid]
+    if(previousKey == NinKid)
       return; //already registered
 
     //zkp(
       //K!invalid
         //?Need KInvalid to be Zero Knowledge Set (ZKS), and to get roots
       //CA!invalid
-      //CA -> K -> Pin
-      //PinK=H(Pin, K_1("registerP"))
-      //PinKP=H(Pin, K_1("registerP"), P_1("registerP"))
+      //CA -> K -> Nin
+      //NinKid=H(Nin, KidPrivate("registerP"))
+      //NinKidKp=H(Nin, KidPrivate("registerP"), KpPrivate("registerP"))
     //)
     bool ok = zksnarkverify(VK, [
+      NinKid,
+      NinKidKp
     ], proof);
 
-    if(ok && ! PInvalid[PinKP]){
+    if(ok && ! PInvalid[NinKidKp]){
       if(previousKey != 0)
         PInvalid[previousKey]=true;
-      PinKPUsed[PinK]=PinKP;
-      PinKPLastConfirmed[PinK]=block.number;
+      NinKidKpUsed[NinKid]=NinKidKp;
+      NinKidKpLastConfirmed[NinKid]=block.number;
     }
 
   }
