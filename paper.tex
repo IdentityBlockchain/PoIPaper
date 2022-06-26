@@ -75,10 +75,10 @@ Miroslav Jerković, University of Zagreb
 Sometimes we write $K$ for $(K, K^{-1})$.
 
 \newpage
-\section{Registering $\khk$ (Person key)}
+\section{Registering $\khk$}
 \begin{enumerate}
   \item Register $\kid$ on \pbc, by calling 
-    $$register\kid(Nin, \kid^{-1}("register\kid"), proofNinOwnsK).$$
+    $$register\kid(H(Nin), \kid^{-1}("register\kid"), proofNinOwnsK).$$
   
     The Person tells the \pbc{} what personal identification document will they be using.
 
@@ -91,6 +91,18 @@ Sometimes we write $K$ for $(K, K^{-1})$.
 
     Entities who know $\kid$ (e.g. CA that issued it) can know that the Person is using \pbc{}, and what identification document the Person is using.
 
+    The reasoning behind the choice of arguments for the $register\kid$ function:
+
+    If we used:
+    \begin{itemize}
+      \item $register\kid(H(Nin, \kid^{-1}("register\kid")), proofNinOwnsK)$
+
+        TODO: explain
+      \item $register\kid(Nin, \kid^{-1}("register\kid"), proofNinOwnsK)$
+
+        TODO: explain
+    \end{itemize}
+
   \item Register $\khk$ on \pbc, by calling 
     $$register\khk(Nin\kid, Nin\kid\khk, proof)$$
   where:
@@ -98,6 +110,23 @@ Sometimes we write $K$ for $(K, K^{-1})$.
       \item $Nin\kid=H(Nin,\kid^{-1}("register\khk"))$
       \item $Nin\kid\khk=H(Nin, \kid^{-1}("register\khk"), \khk^{-1}("register\khk"))$
     \end{enumerate}
+
+  The Person registers a $\khk$, which is a unique public key tied to the Person on the \pbc{}.
+  What is the meaning behind $register\khk$ function?
+  \begin{itemize}
+    \item Sybil resistance. $\khk$ is the only such key that is tied to the Person with the samo $Nin$.
+      By design, the Person can not own two valid $\khk$s at the same time.
+
+      TODO: Explanation/proof.
+    \item Anonimity. Someone with a database of all the $\kid$ public keys or/and the database of all the $\khk$ public keys, shouldn't be able to determine which $Nin$, $\kid$ or $\khk$ was used, from the function call.
+
+    TODO: Explanation/proof.
+
+    The assumption is that the CA doesn't have access to $\kid^{-1}$, i.e. that $\kid$ is generated safely on the eID.
+  \end{itemize}
+  The reasoning behind the choice of arguments for the $register\khk$ function:
+
+  TODO: 
 \end{enumerate}
 
 \newpage
@@ -108,32 +137,32 @@ Sometimes we write $K$ for $(K, K^{-1})$.
 //PersonKey is Blockchain key used by a Person
 contract IdentitiesManager {
   //all the mappings are mappings where uint256 is a hash!
-  mapping(uint256 => uint256) public PinKUsed;
-  mapping(uint256 => uint256) public PinKPUsed;
-  mapping(uint256 => uint256) public PinKPLastConfirmed;
-  mapping(uint256 => bool) public PInvalid;
-  mapping(uint256 => bool) public KInvalid;
+  mapping(uint256 => uint256) public NinKidUsed;
+  mapping(uint256 => uint256) public NinKidKpUsed;
+  mapping(uint256 => uint256) public NinKidKpLastConfirmed;
+  mapping(uint256 => bool) public KpInvalid;
+  mapping(uint256 => bool) public KidInvalid;
   //TODO:CA fields!
 
-  //K_1=K_1("registerK")
-  //Pin=H(Pin)
-  function registerK public(
-    uint256 Pin,
-    uint256 K_1,
-    bytes proofPinOwnsK
+  //vKid=KidPrivate("registerKid")
+  //Nin=H(Nin)
+  function registerKid public(
+    uint256 Nin,
+    uint256 vKid,
+    bytes proofNinOwnsKid
   ){
-    uint256 previousKey = PinKUsed[Pin];
-    if(previouseKey == K_1)
+    uint256 previousKey = NinKidUsed[Nin];
+    if(previousKey == vKid)
       return;
     bool isOwner = zksnarkverify(VK, [
-        PIN, 
-        K_1
+        Nin, 
+        vKid
       ],
-      proofPINOwnsK);
-    if(isOwner && ! KInvalid[K_1]){
+      proofPINOwnsKid);
+    if(isOwner && ! KidInvalid[vKid]){
       if(previousKey!=0)
-        KInvalid[previousKey]=true;
-      PinKUsed[Pin]=K_1;
+        KidInvalid[previousKey]=true;
+      NinKidUsed[Nin]=vKid;
     }
   }
 
