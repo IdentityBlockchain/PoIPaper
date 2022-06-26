@@ -41,11 +41,10 @@
 %    backgroundcolor=\color{background}
 %}
 
-\newcommand{\khk}{$P$}
+\newcommand{\khk}{K_{P}}
 \newcommand{\khkp}{$K^{-1}[\text{HK}]$}
-\newcommand{\identity}{\textit{Identity}}
-%\newcommand{\kid}{$K[\text{\identity}]$}
-\newcommand{\kid}{$K$}
+\newcommand{\kid}{K_{ID}}
+%\newcommand{\kid}{$K$}
 \newcommand{\todo}[1]{\fbox{\parbox{\linewidth}{\textcolor{red}{#1}}}}
 \newcommand{\iv}{$IV(\text{\identity})$}
 \newcommand{\sigid}{$K^{-1}[CA](K[Identity])$}
@@ -53,38 +52,51 @@
 \newenvironment{solution}
   {\emph{Solution:}}
   {\hfill $\square$}
-\newcommand{\pbc}{\textit{PeopleBC}}
+\newcommand{\pbc}{\textit{Identity Blockchain}}
 
 \title{Proof of Identity}
-\author{Albert Vučinović, University North}
+\author{
+Albert Vučinović, University North\\
+Miroslav Jerković, University of Zagreb
+}
 \begin{document}
 \maketitle
 \section{Notation}
 \begin{tabular}{p{0.36\linewidth}|p{0.55\linewidth}}
-	$Key(value)$ & $value$ encrypted with a public key $Key$. \\
-	$Key^{-1}$ & Private key corresponding to a public key $Key$. \\
-  $H$ & SHA256 \\
-	\kid &  State CA certified public key of e.g. eID\\
-  \khk & Person key, used to access PeopleBC as an unknown Person. \\
+  $(K, K^{-1})$ & A pair of public $K$ and the corresponding private key $K^{-1}$. \\
+	$K(value)$ & $value$ encrypted with a public key $K$. \\
+	$K^{-1}(value)$ & $value$ encrypted with a private key $K^{-1}$. \\
+  $H$ & Hash function, e.g. some zksnark friedly one \\
+	$\kid$ &  State CA certified public key of e.g. eID\\
+  $\khk$ & Person key, public key used to access \pbc{} as an unknown Person. \\
+  $Nin$ & A personal National Identification Number issued by state.
 \end{tabular}
 
+Sometimes we write $K$ for $(K, K^{-1})$.
+
 \newpage
-\section{Registering \khk{} (Person key)}
+\section{Registering $\khk$ (Person key)}
 \begin{enumerate}
-  \item Use \kid{} to sign "PeopleBC", $K_1 = \kid^{-1}("registerK")$.
-  \begin{enumerate}
-    \item Entities who know \kid{} (e.g. CA that issued it) can know that the Person is using PeopleBC, and what identification document the Person is using.
-  \end{enumerate}
-  \item Register \kid{} on \pbc, by calling 
-    $$registerK(Pin, K_1, proofPinOwnsK)$$.
-  \item Register \khk{} on \pbc, by calling 
-    $$registerP(PinK, PinKP, proof)$$
+  \item Register $\kid$ on \pbc, by calling 
+    $$register\kid(Nin, \kid^{-1}("register\kid"), proofNinOwnsK).$$
+  
+    The Person tells the \pbc{} what personal identification document will they be using.
+
+    What is the meaning behind $register\kid$ function?
+    \begin{itemize}
+      \item Sybil resistance. To prevent a Person from registering more than one $\khk$ using different identification documents, which are issued for the same $Nin$.
+      \item Loss of $\kid$. If a Person looses previously registered $\kid$ (e.g. by loosing the eID), they can register a new one.
+      \item Identity theft damage control. If a Person overwrites the previous $\kid$ with a new one, the identity thief will loose access to services that check the whole identity chain.
+    \end{itemize}
+
+    Entities who know $\kid$ (e.g. CA that issued it) can know that the Person is using \pbc{}, and what identification document the Person is using.
+
+  \item Register $\khk$ on \pbc, by calling 
+    $$register\khk(Nin\kid, Nin\kid\khk, proof)$$
   where:
     \begin{enumerate}
-      \item $K_2=\kid^{-1}("registerP")$
-      \item $PinK=H(Pin,K_2)$
-      \item $P_1 = \khk^{-1}("registerP")$
-      \item $PinKP=H(Pin, K_2, P_1)$
+      \item $Nin\kid=H(Nin,\kid^{-1}("register\khk"))$
+      \item $Nin\kid\khk=H(Nin, \kid^{-1}("register\khk"), \khk^{-1}("register\khk"))$
     \end{enumerate}
 \end{enumerate}
 
