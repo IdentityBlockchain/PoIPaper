@@ -16,11 +16,12 @@ The material that follows is under construction, bit it can offer a glimpse into
 
 | Symbol      | Meaning     |
 | :---        |    :----  |
-| $K$      | State CA (Certificate Authority) certified public key of e.g. eID       |
-| $K(value)$   | value encrypted with the public key $K$        |
-| $K^{-1}$ | Private key corresponding to the public key $K$    |
-| $P$ | Person key, used to access IdentityBlockchain as an unknown Person    |
+| $Key(value)$   | value encrypted with the public key $Key$        |
+| $Key^{-1}$ | Private key corresponding to the public key $Key$    |
 | $H$ | SHA256    |
+| $K$      | State CA (Certificate Authority) certified public key of e.g. eID       |
+| $P$ | Person key, used to access IdentityBlockchain as an unknown Person    |
+
 
 ### Registering P
 
@@ -125,7 +126,7 @@ def proofPINOwnsK(
 }
 
 def proof_of_being_a_person(
-  //publically known arguments
+  //publicly known arguments
   field[2] PINKeyUsedHash,
   field[2] PINKeyPersonKeyIssuedHash,
   field[2] PersonKeyInvalidHash,
@@ -174,11 +175,11 @@ def proof_of_being_a_person(
   //pseudo
   RSADecrypt(K_new, K_1_new) == "PeopleBC Person Proof";//?+BC_private_key_challenge;
 
-  //proove that Key is connected to CA
+  //prove that Key is connected to CA
   //pseudo
   checkCASignature(CAKey[CAindex], CACert, K_new) == 1;
 
-  //proove that K_new is PIN certificate
+  //prove that K_new is PIN certificate
   //pseudo
   extractPIN(CACert)==PIN;
 
