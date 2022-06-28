@@ -23,7 +23,7 @@ Sometimes, instead of $(K, K^{-1})$, we simply write $K$.
 ## Registering $K_{ID}$
 
 Register $K_{ID}$ on _Identity Blockchain_ by calling
-$$registerK_{ID}(H(Nin), K_{ID}^{-1}("registerK_{ID}"), proofNinOwnsKid).$$
+$$registerK_{ID}(H(Nin), K_{ID}^{-1}(\text{’}registerK_{ID}\text{’}), proofNinOwnsKid).$$
 
 ### Pseudo-solidity code
 
