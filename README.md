@@ -62,9 +62,9 @@ Register $K_P$ on _Identity Blockchain_ by calling
 $$registerK_P(NinK_{ID}, NinK_{ID}K_P, proof),$$
 where:
 
-$NinK_{ID}=H(Nin,K_{ID}^{-1}("registerK_P"))$
+$NinK_{ID}=H(Nin,K_{ID}^{-1}(\text{"}registerK_P\text{"}))$
 
-$NinK_{ID}K_P=H(Nin, K_{ID}^{-1}("registerK_P"), K_{ID}^{-1}("registerK_P"))$.
+$NinK_{ID}K_P=H(Nin, K_{ID}^{-1}(\text{"}registerK_P\text{"}), K_{ID}^{-1}(\text{"}registerK_P\text{"}))$.
 
 ### Pseudo-solidity code
 
