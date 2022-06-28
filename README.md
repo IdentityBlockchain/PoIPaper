@@ -69,7 +69,7 @@ $NinK_{ID}K_P=H(Nin, K_{ID}^{-1}(\text{"}registerK_P\text{"}), K_{ID}^{-1}(\text
 ### Pseudo-solidity code
 
 ```solidity
-mapping(uint256 => uint256) public ninKidKpUsed;
+  mapping(uint256 => uint256) public ninKidKpUsed;
   mapping(uint256 => bool) public kpInvalid;
   mapping(uint256 => uint256) public ninKidKpLastConfirmed;
 
