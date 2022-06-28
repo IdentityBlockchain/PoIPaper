@@ -9,37 +9,45 @@
 \usepackage{xcolor}%
 \usepackage{tabularx}%
 \usepackage{listings}%
-\lstdefinestyle{b}{basicstyle=\tiny\ttfamily}
-\lstset{
-  showspaces=false,
-  showstringspaces=false
-  }
+\usepackage{colortbl}
+\usepackage{enumitem}
 
-% Add your keywords here, and have this in a separate file
-% and include it in your preamble
-\lstset{emph={%
-    function, uint256, public, mapping,contract,bytes,bool, if, for,
-    field, private, def, import, assert, require, zksnarkverify %
-},emphstyle={\color{blue}\bfseries}%
+\usepackage{listings, xcolor}
+
+\definecolor{verylightgray}{rgb}{.97,.97,.97}
+
+\lstdefinelanguage{Solidity}{
+	keywords=[1]{anonymous, assembly, assert, balance, break, call, callcode, case, catch, class, constant, continue, constructor, contract, debugger, default, delegatecall, delete, do, else, emit, event, experimental, export, external, false, finally, for, function, gas, if, implements, import, in, indexed, instanceof, interface, internal, is, length, library, log0, log1, log2, log3, log4, memory, modifier, new, payable, pragma, private, protected, public, pure, push, require, return, returns, revert, selfdestruct, send, solidity, storage, struct, suicide, super, switch, then, this, throw, transfer, true, try, typeof, using, value, view, while, with, addmod, ecrecover, keccak256, mulmod, ripemd160, sha256, sha3}, % generic keywords including crypto operations
+	keywordstyle=[1]\color{blue}\bfseries,
+	keywords=[2]{address, bool, byte, bytes, bytes1, bytes2, bytes3, bytes4, bytes5, bytes6, bytes7, bytes8, bytes9, bytes10, bytes11, bytes12, bytes13, bytes14, bytes15, bytes16, bytes17, bytes18, bytes19, bytes20, bytes21, bytes22, bytes23, bytes24, bytes25, bytes26, bytes27, bytes28, bytes29, bytes30, bytes31, bytes32, enum, int, int8, int16, int24, int32, int40, int48, int56, int64, int72, int80, int88, int96, int104, int112, int120, int128, int136, int144, int152, int160, int168, int176, int184, int192, int200, int208, int216, int224, int232, int240, int248, int256, mapping, string, uint, uint8, uint16, uint24, uint32, uint40, uint48, uint56, uint64, uint72, uint80, uint88, uint96, uint104, uint112, uint120, uint128, uint136, uint144, uint152, uint160, uint168, uint176, uint184, uint192, uint200, uint208, uint216, uint224, uint232, uint240, uint248, uint256, var, void, ether, finney, szabo, wei, days, hours, minutes, seconds, weeks, years},	% types; money and time units
+	keywordstyle=[2]\color{teal}\bfseries,
+	keywords=[3]{block, blockhash, coinbase, difficulty, gaslimit, number, timestamp, msg, data, gas, sender, sig, value, now, tx, gasprice, origin},	% environment variables
+	keywordstyle=[3]\color{violet}\bfseries,
+	identifierstyle=\color{black},
+	sensitive=false,
+	comment=[l]{//},
+	morecomment=[s]{/*}{*/},
+	commentstyle=\color{gray}\ttfamily,
+	stringstyle=\color{red}\ttfamily,
+	morestring=[b]',
+	morestring=[b]"
 }
 
-%\definecolor{keywords}{HTML}{8A4A0B}
-%
-%\definecolor{background}{HTML}{EEEEEE}
-%
-%\lstset{language=[LaTeX]Tex,
-%    keywordstyle=\color{keywords},
-%    keywordstyle=[2]\color{red},
-%    keywordstyle=[3]\color{orange},
-%    basicstyle=\normalfont\ttfamily,
-%    showstringspaces=false,
-%    frameround=ftff,
-%    frame=lines,
-%    morekeywords={RequirePackage,ProvidesPackage},
-%    keywords=[2]{Some,Other,Keywords},
-%    keywords=[3]{and,another,test},
-%    backgroundcolor=\color{background}
-%}
+\lstset{
+	language=Solidity,
+	backgroundcolor=\color{verylightgray},
+	extendedchars=true,
+	basicstyle=\footnotesize\ttfamily,
+	showstringspaces=false,
+	showspaces=false,
+	numbers=left,
+	numberstyle=\footnotesize,
+	numbersep=9pt,
+	tabsize=2,
+	breaklines=true,
+	showtabs=false,
+	captionpos=b
+}
 
 \newcommand{\khk}{K_{P}}
 \newcommand{\khkp}{$K^{-1}[\text{HK}]$}
@@ -54,157 +62,141 @@
   {\hfill $\square$}
 \newcommand{\pbc}{\textit{Identity Blockchain}}
 
-\title{Proof of Identity}
+\title{Identity Blockchain - Proof of Identity}
 \author{
 Albert Vučinović, University North\\
 Miroslav Jerković, University of Zagreb
 }
 \begin{document}
 \maketitle
+
+\begin{abstract}
+$\pbc$ uses state-certified electronic identities (eIDs) to create blockchain identities and a consensus protocol called Proof of Identity (PoI). PoI is "green" and enables many applications that are impossible to implement without verified identity on the blockchain, e.g., direct democracy and universal basic income, encrypted messaging, etc. $\pbc$ preserves identity anonymity by using zk-SNARKs and an anonymization protocol for identity onboarding.
+\end{abstract}
+
+\section{Introduction}
+TODO
+
 \section{Notation}
-\begin{tabular}{p{0.36\linewidth}|p{0.55\linewidth}}
-  $(K, K^{-1})$ & A pair of public $K$ and the corresponding private key $K^{-1}$. \\
-	$K(value)$ & $value$ encrypted with a public key $K$. \\
-	$K^{-1}(value)$ & $value$ encrypted with a private key $K^{-1}$. \\
-  $H$ & Hash function, e.g. some zksnark friedly one \\
-	$\kid$ &  State CA certified public key of e.g. eID\\
-  $\khk$ & Person key, public key used to access \pbc{} as an unknown Person. \\
-  $Nin$ & A personal National Identification Number issued by state.
+\vspace{10px}
+ \arrayrulecolor{gray}
+\begin{tabular}{p{0.16\linewidth}| p{0.84\linewidth}}
+  $(K, K^{-1})$ & \ \ Pair of public key $K$ and the corresponding private key $K^{-1}$ \\[3px]
+	$K(value)$ & \ \ String $value$ encrypted with a public key $K$ \\[3px]
+	$K^{-1}(value)$ & \ \ String $value$ encrypted with a private key $K^{-1}$ \\[3px]
+  $H$ & \ \ zk-SNARK-friendly hash function \\[5px]
+ \hline \\
+   $Nin$ & \ \ Unique state-issued personal \textit{National Identification Number}\\[3px]
+   $CA$ & \ \ Certificate Authority \\[3px]
+   $eID$ & \ \ Electronic identification document \\[3px]
+	$\kid$ & \ \ CA-certified public key of eID\\[3px]
+  $\khk$ & \ \ Person key, unique public key used to access \pbc{}
+
 \end{tabular}
+
+\vspace{15px}
 
 Sometimes we write $K$ for $(K, K^{-1})$.
 
 \newpage
-\section{Registering $\khk$}
-\begin{enumerate}
-  \item Register $\kid$ on \pbc, by calling 
-    $$register\kid(H(Nin), \kid^{-1}("register\kid"), proofNinOwnsK).$$
-  
-    The Person tells the \pbc{} what personal identification document will they be using.
+\section{Registering $\kid$}
+Register $\kid$ on \pbc{} by calling $$register\kid(H(Nin), \kid^{-1}("register\kid"), proofNinOwnsKid).$$
+\begin{enumerate}[leftmargin=0cm]
+\item[] \underline{Pseudo-solidity code}
 
-    What is the meaning behind $register\kid$ function?
+\hfill\begin{minipage}{\dimexpr\textwidth-20px}
+\begin{lstlisting}[language=Solidity]
+  mapping(uint256 => uint256) public ninKidUsed;
+  mapping(uint256 => bool) public kidInvalid;
+
+  function registerKid(
+    uint256 hNin, // hNin = H(Nin)
+    uint256 vKid, // vKid = KidPrivate("registerKid")
+    bytes proofNinOwnsKid
+  ) public {
+    uint256 previousKey = ninKidUsed[hNin];
+    if (previousKey == vKid) return; // already registered
+    bool isOwner = zksnarkverify(VK, [hNin, vKid], proofNinOwnsKid); // VK = verification key
+    if (isOwner && !kidInvalid[vKid]) {
+      if (previousKey != 0) kidInvalid[previousKey] = true;
+      ninKidUsed[hNin] = vKid;
+    }
+  }
+\end{lstlisting}
+\xdef\tpd{\the\prevdepth}
+\end{minipage}
+\item[] \underline{Features}
     \begin{itemize}
-      \item Sybil resistance. To prevent a Person from registering more than one $\khk$ using different identification documents, which are issued for the same $Nin$.
-      \item Loss of $\kid$. If a Person looses previously registered $\kid$ (e.g. by loosing the eID), they can register a new one.
-      \item Identity theft damage control. If a Person overwrites the previous $\kid$ with a new one, the identity thief will loose access to services that check the whole identity chain.
+      \item[] \textbf{Sybil resistance} \\ A Person is prevented from registering more than one $\khk$, e.g. by using different identification documents issued for the same $Nin$.
+          \vspace{5px}
+      \item[] \textbf{Fix for the loss of eID} \\ A Person who has lost a previously registered $\kid$, e.g. due to loss of eID, can overwrite it by registering a new $\kid$.
+          \vspace{5px}
+      \item[] \textbf{Identity theft damage control} \\ If a Person overwrites the previous $\kid$ with a new one, the identity Thief loses access to services that verify the entire identity chain.
     \end{itemize}
 
-    Entities who know $\kid$ (e.g. CA that issued it) can know that the Person is using \pbc{}, and what identification document the Person is using.
-
-    The reasoning behind the choice of arguments for the $register\kid$ function:
-
-    If we used:
-    \begin{itemize}
-      \item $register\kid(H(Nin, \kid^{-1}("register\kid")), proofNinOwnsK)$
-
-        TODO: explain
-      \item $register\kid(Nin, \kid^{-1}("register\kid"), proofNinOwnsK)$
-
-        TODO: explain
-    \end{itemize}
-
-  \item Register $\khk$ on \pbc, by calling 
-    $$register\khk(Nin\kid, Nin\kid\khk, proof)$$
-  where:
-    \begin{enumerate}
-      \item $Nin\kid=H(Nin,\kid^{-1}("register\khk"))$
-      \item $Nin\kid\khk=H(Nin, \kid^{-1}("register\khk"), \khk^{-1}("register\khk"))$
-    \end{enumerate}
-
-  The Person registers a $\khk$, which is a unique public key tied to the Person on the \pbc{}.
-  What is the meaning behind $register\khk$ function?
-  \begin{itemize}
-    \item Sybil resistance. $\khk$ is the only such key that is tied to the Person with the samo $Nin$.
-      By design, the Person can not own two valid $\khk$s at the same time.
-
-      TODO: Explanation/proof.
-    \item Anonimity. Someone with a database of all the $\kid$ public keys or/and the database of all the $\khk$ public keys, shouldn't be able to determine which $Nin$, $\kid$ or $\khk$ was used, from the function call.
-
-    TODO: Explanation/proof.
-
-    The assumption is that the CA doesn't have access to $\kid^{-1}$, i.e. that $\kid$ is generated safely on the eID.
-  \end{itemize}
-  The reasoning behind the choice of arguments for the $register\khk$ function:
-
-  TODO: 
+\item[] \underline{Remarks}
+\begin{itemize}
+\item[i)] An entity that knows $\kid$, e.g. the CA who certified the corresponding eID, can know that the Person has registered $\kid$ on \pbc{}.
+\item[ii)] Reasoning behind the choice of arguments: if $H(Nin, \kid^{-1}("register\kid"))$ was used as an argument, then TODO. On the other hand, the choice of arguments $Nin$ and $\kid^{-1}("register\kid")$ would TODO.
+\end{itemize}
 \end{enumerate}
 
 \newpage
-\section{On chain code}
-\begin{lstlisting}[language=C, frame=single, style=b]
-//pseudo Solidity
-contract IdentitiesManager {
-  //all the mappings are mappings where uint256 is a hash!
-  mapping(uint256 => uint256) public NinKidUsed;
-  mapping(uint256 => uint256) public NinKidKpUsed;
-  mapping(uint256 => uint256) public NinKidKpLastConfirmed;
-  mapping(uint256 => bool) public KpInvalid;
-  mapping(uint256 => bool) public KidInvalid;
-  //TODO:CA fields!
+\section{Registering $\khk$}
+Register $\khk$ on \pbc{} by calling $$register\khk(Nin\kid, Nin\kid\khk, proof),$$
+  where:
+    \begin{enumerate}
+      \item[] $Nin\kid=H(Nin,\kid^{-1}("register\khk"))$
+      \item[] $Nin\kid\khk=H(Nin, \kid^{-1}("register\khk"), \khk^{-1}("register\khk"))$.
+    \end{enumerate}
+\begin{enumerate}[leftmargin=0cm]
+\item[] \underline{Pseudo-solidity code}
 
-  //hNin=H(Nin)
-  //vKid=KidPrivate("registerKid")
-  function registerKid public(
-    uint256 hNin,
-    uint256 vKid,
-    bytes proofNinOwnsKid
-  ){
-    uint256 previousKey = NinKidUsed[hNin];
-    if(previousKey == vKid)
-      return;
-    bool isOwner = zksnarkverify(VK, [
-        hNin, 
-        vKid
-      ],
-      proofPINOwnsKid);
-    if(isOwner && ! KidInvalid[vKid]){
-      if(previousKey!=0)
-        KidInvalid[previousKey]=true;
-      NinKidUsed[hNin]=vKid;
-    }
-  }
+\hfill\begin{minipage}{\dimexpr\textwidth-20px}
+\begin{lstlisting}[language=Solidity]
+  mapping(uint256 => uint256) public ninKidKpUsed;
+  mapping(uint256 => bool) public kpInvalid;
+  mapping(uint256 => uint256) public ninKidKpLastConfirmed;
 
-  //look into the paper.pdf for meaning of args
-  function registerKp public(
-    uint256 NinKid,
-    uint256 NinKidKp,
+  function registerKp(
+    uint256 ninKid,
+    uint256 ninKidKp,
     bytes proof
-  ){
-    uint256 previousKey = NinKidKpUsed[NinKid]
-    if(previousKey == NinKid)
-      return; //already registered
-
-    //zkp(
-      //K!invalid
-        //?Need KInvalid to be Zero Knowledge Set (ZKS), and to get roots
-      //CA!invalid
-      //CA -> K -> Nin
-      //NinKid=H(Nin, KidPrivate("registerP"))
-      //NinKidKp=H(Nin, KidPrivate("registerP"), KpPrivate("registerP"))
-    //)
-    bool ok = zksnarkverify(VK, [
-      NinKid,
-      NinKidKp
-    ], proof);
-
-    if(ok && ! PInvalid[NinKidKp]){
-      if(previousKey != 0)
-        PInvalid[previousKey]=true;
-      NinKidKpUsed[NinKid]=NinKidKp;
-      NinKidKpLastConfirmed[NinKid]=block.number;
+  ) public {
+    uint256 previousKey = ninKidKpUsed[ninKid];
+    if (previousKey == ninKid) return; // already registered
+    bool ok = zksnarkverify(VK, [ninKid, ninKidKp], proof); // VK = verification key
+    if (ok && !kpInvalid[ninKidKp]) {
+      if (previousKey != 0) kpInvalid[previousKey] = true;
+      ninKidKpUsed[ninKid] = ninKidKp;
+      ninKidKpLastConfirmed[ninKid] = block.number;
     }
-
   }
-
-}
-
-contract PersonAccount{
-}
 \end{lstlisting}
+\xdef\tpd{\the\prevdepth}
+\end{minipage}
+\item[] \underline{Features}
+\begin{itemize}
+      \item[] \textbf{Sybil resistance} \\ $\khk$ is a unique public key bound to the Person on the \pbc{}. By design, the Person cannot have two valid $\khk$ keys at the same time.
+
+      TODO: Explanation/proof.
+      \vspace{5px}
+    \item[] \textbf{Anonimity} \\ No one who has a database with all public keys $\kid$ or/and public keys $\khk$ can tell, from the function call, which $Nin$, $\kid$ or $\khk$ was used. This is true under the assumption that CA, which certified the eID, does not have access to $\kid^{-1}$, i.e. that $\kid$ was securely generated on the eID.
+
+    TODO: Explanation/proof.
+\end{itemize}
+
+\item[] \underline{Remarks}
+\begin{itemize}
+\item[i)] Reasoning behind the choice of arguments: TODO
+\end{itemize}
+
+
+\end{enumerate}
 
 \newpage
 \section{zkp code}
-\begin{lstlisting}[language=C, frame=single, style=b]
+\begin{lstlisting}
 //pseudo zokrates zk-SNARK
 import "hashes/sha256/512bitPacked" as sha256packed
 import "ecc/babyjubjubParams.code" as context
@@ -213,7 +205,7 @@ import "ecc/proofOfOwnership.code" as proofOfOwnership
 def proofPINOwnsK(
   field[2] PINHash,
   field[2] K_1Hash,
-  field[2] 
+  field[2]
 
   private field[?] CACert){
 }
@@ -257,9 +249,9 @@ def proof_of_being_a_person(
   field[2] hash_PIN = sha256packed([0,0,0,PIN])
   assert(hash_PIN == PINHash);//proving that we know the real PIN, unimportant
 
-  //proving ownership of newly registered key, 
+  //proving ownership of newly registered key,
   //no real need to prove ownership of bc key
-  //we actually need to prove ownereship of K_1_new, 
+  //we actually need to prove ownereship of K_1_new,
   //and its connection to PIN via CA
   context=context()//babyjubjubParams context
   proofOfOwnership(K_bc_new, K_private_bc_new, context)==1
@@ -271,11 +263,11 @@ def proof_of_being_a_person(
   //proove that Key is connected to CA
   //pseudo
   checkCASignature(CAKey[CAindex], CACert, K_new) == 1;
-  
+
   //proove that K_new is PIN certificate
   //pseudo
   extractPIN(CACert)==PIN;
-  
+
   //end
 
   //end..
@@ -283,55 +275,30 @@ def proof_of_being_a_person(
 \end{lstlisting}
 \newpage
 \section{Problems}
-\begin{problem}
-  The rate of adding identities, the problem being frequent changes of Merkle Tree Roots, and how long it takes to generate zkp proof, and block generation time.
-\end{problem}
-\begin{problem}
-\label{prob:bigsteal}
-  Someone stole $K^{-1}$ before we registered on \pbc.
-  The Thief registered $K$ and $P$, and who knows what else.
-\end{problem}
-\begin{solution}
-\end{solution}
-\begin{problem}
-  Someone stole $K^{-1}$ after we registered on \pbc.
-\end{problem}
-\begin{problem}
-Trying to use unregistered Key.
-\end{problem}
-\begin{solution}
-\end{solution}
-\begin{problem}
-Trying to register the same PIN with multiple Keys (e.g. two physical ids).
-\end{problem}
-\begin{problem}
-\label{prob:chain}
-  Using $P$ without checking the whole $CA\rightarrow K\rightarrow P$ chain.
+\begin{enumerate}[label=\textbf{P\arabic*}]
+\item The rate of addition of identities, the problems of frequent changes of Merkle Tree Roots, and how long it takes to generate zkp proof, and block generation time.
+\item \label{bigsteal} The Thief stole $\kid^{-1}$ before we registered on \pbc{} and then registered $\kid$ and $\khk$.
+\item The Thief stole $\kid^{-1}$ after we registered on \pbc.
+\item Trying to use unregistered Key.
+\item Trying to register the same $Nin$ with multiple Keys (e.g. two physical ids).
+\item \label{chain} Using $\khk$ without checking the whole $CA\rightarrow \kid \rightarrow \khk$ chain.
   \begin{itemize}
-    \item Using $P$ to register as a mining key.
-    \item Invalidating $P$.
-    \item Using $P_{new}$ as a mining key.
+    \item[i)] Using $\khk$ to register as a mining key.
+    \item[ii)] Invalidating $\khk$.
+    \item[iii)] Using new $\khk$ as a mining key.
   \end{itemize}
-\end{problem}
-\begin{solution}
-  Look at the solution to Problem \ref{prob:miningKey}.
+  \underline{Solution}
 
-  The Mining Registry can accept new $P$s after an expiration period (which can also be e.g. 1 day).
-\end{solution}
-\begin{problem}
-\label{prob:miningKey}
-  A combination of Problem \ref{prob:bigsteal} and Problem \ref{prob:chain}.
-  Someone steals $K$, registeres $P$ and registeres $P$ for mining.
-  The problem is bigger, because we can't invalidate $P$ if we don't know which $P$ it is.
-\end{problem}
-\begin{solution}
-  We make $P$ renewable. We write the last block number it was renewed on to the blockchain.
-  Mining Registry can choose to accept P which is not older than some time period (for the Registry a good period would seem to be 1 day).
-  When paying the miners, the Registry also requires proof of $P$'s age.
+  Look at the solution to \ref{miningKey}.
 
-  $K$ is easely invalidated, because there is an explicit $PIN \rightarrow K^{-1}$ mapping on the blockchain, so it doesn't need to be renewable in the sence to proove it is still valid.
-\end{solution}
-\begin{problem}
-  Only $P$ compromised.
-\end{problem}
+  The Mining Registry can accept new $\khk$ after an expiration period (which can be e.g. one day).
+\item \label{miningKey} A combination of \ref{bigsteal} and \ref{chain}. The Thief steals $\kid$, registers $\khk$ and registers $\khk$ for mining. The problem is bigger, because we can't invalidate $\khk$ if we don't know which $\khk$ it is.
+
+  \underline{Solution}
+
+  We make $\khk$ renewable. We write the last block number it was renewed on to the \pbc.
+  Mining Registry can choose to accept $\khk$ that is not older than some time period (for the Registry a good period would seem to be one day).
+  When paying the miners, the Registry also requires proof of $\khk$.
+\item Only $\khk$ is compromised.
+\end{enumerate}
 \end{document}
