@@ -80,7 +80,7 @@ TODO
 \section{Notation}
 \vspace{10px}
  \arrayrulecolor{gray}
-\begin{tabular}{p{0.16\linewidth}| p{0.84\linewidth}}
+\begin{tabular}{p{0.16\linewidth}| p{0.81\linewidth}}
   $(K, K^{-1})$ & \ \ Pair of public key $K$ and the corresponding private key $K^{-1}$ \\[3px]
 	$K(value)$ & \ \ String $value$ encrypted with a public key $K$ \\[3px]
 	$K^{-1}(value)$ & \ \ String $value$ encrypted with a private key $K^{-1}$ \\[3px]
@@ -137,7 +137,7 @@ Register $\kid$ on \pbc{} by calling $$register\kid(H(Nin), \kid^{-1}("register\
 \item[] \underline{Remarks}
 \begin{itemize}
 \item[i)] An entity that knows $\kid$, e.g. the CA who certified the corresponding eID, can know that the Person has registered $\kid$ on \pbc{}.
-\item[ii)] Reasoning behind the choice of arguments: if $H(Nin, \kid^{-1}("register\kid"))$ was used as an argument, then TODO. On the other hand, the choice of arguments $Nin$ and $\kid^{-1}("register\kid")$ would TODO.
+\item[ii)] Reasoning for the choice of arguments: if $H(Nin, \kid^{-1}("register\kid"))$ was used as an argument, then TODO. On the other hand, the choice of arguments $Nin$ and $\kid^{-1}("register\kid")$ would TODO.
 \end{itemize}
 \end{enumerate}
 
