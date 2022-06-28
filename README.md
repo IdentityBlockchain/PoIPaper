@@ -18,7 +18,7 @@ _Identity Blockchain_ uses state-certified electronic identities (eIDs) to creat
 | $K_{ID}$        | CA-certified public key of eID                                     |
 | $K_{P}$         | Person key, unique public key used to access _Identity Blockchain_ |
 
-Sometimes we write $K$ instead of $(K, K^{-1})$.
+Sometimes, instead of $(K, K^{-1})$, we simply write $K$.
 
 ## Registering $K_{ID}$
 
