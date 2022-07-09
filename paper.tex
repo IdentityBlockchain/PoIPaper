@@ -69,7 +69,7 @@
 
 \lstset{
 	language=circom,
-	backgroundcolor=\color{verylightblue},
+	backgroundcolor=\color{lightgray},
 	extendedchars=true,
 	basicstyle=\footnotesize\ttfamily,
 	showstringspaces=false,
@@ -162,10 +162,37 @@ Register $\kid$ on \pbc{} by calling $$register\kid(H(Nin), \kid^{-1}("register\
 \item[] \underline{Pseudo-circom code}
 
 \hfill\begin{minipage}{\dimexpr\textwidth-20px}
+Using https://github.com/zkp-application/circom-rsa-verify for now, MIT license.
+Which probably doesn't work, we should check (sha256?).
+The next line is used on a file of shape:
+-----BEGIN PUBLIC KEY-----
+...
+-----END PUBLIC KEY-----
+-----BEGIN CERTIFICATE-----
+...
+-----END CERTIFICATE-----
+We assume: 
+	modulus = Subject Modulus
+	exp = Subject Exponent
+
+openssl x509 -in Identification.pem -text -noout
+
 \begin{lstlisting}[language=circom]
 pragma circom 2.0.0;
 
-template NinOwnsKid(){
+include "./utils/rsa_verify.circom"
+include "./circomlib/circuits/sha256/sha256.circom"
+include "./circomlib/bitify.circom"
+
+//hashNumberOfWords = 4 for sha256
+//rsaNumberOfWords = 32 for 2048 rsa
+//we use words of 64 bits
+template NinOwnsKid(
+		rsaNumberOfWords, 
+		hashNumberOfWords, 
+		lengthInBitsOfSignedMessage,
+		lengthOfNinInBits
+){
 	//TODO: What happens to uint256 when converted to signal
 
 	//public:
@@ -173,6 +200,57 @@ template NinOwnsKid(){
 	signal input vKid;
 
 	//private:
+	signal input Nin;
+	//Kid, CA signature
+	singal input exp[rsaNumberOfWords];
+	signal input sign[rsaNumberOfWords];
+	signal input modulus[rsaNumberOfWords];
+
+	//we need some inputs to verify what is signed
+	//and that Nin in the right place in the signed message
+  signal input messageToBeSigned[lengthInBitsOfSignedMessage];
+	signal input Nin[lengthOfNinInBits];
+
+	//TODO: Insert Nin into messageToBeSigned in the right place
+	//or create constraint on the corresponding bits
+
+
+	component sha = Sha256(lengthInBitsOfSignedMessage);
+	for (int i = 0; i<lengthInBitsOfSignedMessage; i++) {
+		sha.in[i] <== messageToBeSigned[i]
+	}
+
+	var hashed[hashNumberOfWords];//4x64 bit
+	var hashedBits[hashNumberOfWords*64];
+	for (int i=0; i<hashNumberOfWords*64;i++){
+		hashedBits[i] <== sha.out[i];
+	}
+	component b2n = Bits2Num(64);
+	//TODO:Can we use a component multiple times?
+	//Will all the constraints be generated
+	for (int i=0;i<hashNumberOfWords;i++){
+		for (int j=0;j<64;j++){
+			b2n.in[j] <== hashedBits[i*64+j];
+		}
+	  hashed[i] <== b2n.out;
+	}
+
+	
+	//lets assume sha256WithRSAEncryption
+
+	component rsa = RsaVerifyPkcs1v15(64, rsaNumberOfWords, 17, 4);
+	for (var i = 0; i < rsaNumberOfWords; i++){
+		rsa.exp[i] <== exp[i];
+		rsa.sign[i] <== sign[i];
+		rsa.modulus[i] <== modulus[i];
+	}
+	for (var i = 0; i<hashNumberOfWords; i++){
+		rsa.hashed[i] <== hashed[i];
+	}
+
+	//Check CA on CA approved list
+	//On blockchain mapping (uint256 => bool) public CAValid
+
 	
 	//Take Kid
 	//Take CA
