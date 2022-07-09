@@ -49,6 +49,40 @@
 	captionpos=b
 }
 
+\lstdefinelanguage{circom}{
+	keywords=[1]{signal, input, output, public, template, component, var, function, return, if, else, for, while,
+		do, log, assert, include, pragma, circom}, % generic keywords including crypto operations
+	keywordstyle=[1]\color{blue}\bfseries,
+	keywords=[2]{},	% types; money and time units
+	keywordstyle=[2]\color{teal}\bfseries,
+	keywords=[3]{},	% environment variables
+	keywordstyle=[3]\color{violet}\bfseries,
+	identifierstyle=\color{black},
+	sensitive=false,
+	comment=[l]{//},
+	morecomment=[s]{/*}{*/},
+	commentstyle=\color{gray}\ttfamily,
+	stringstyle=\color{red}\ttfamily,
+	morestring=[b]',
+	morestring=[b]"
+}
+
+\lstset{
+	language=circom,
+	backgroundcolor=\color{verylightblue},
+	extendedchars=true,
+	basicstyle=\footnotesize\ttfamily,
+	showstringspaces=false,
+	showspaces=false,
+	numbers=left,
+	numberstyle=\footnotesize,
+	numbersep=9pt,
+	tabsize=2,
+	breaklines=true,
+	showtabs=false,
+	captionpos=b
+}
+
 \newcommand{\khk}{K_{P}}
 \newcommand{\khkp}{$K^{-1}[\text{HK}]$}
 \newcommand{\kid}{K_{ID}}
@@ -124,6 +158,33 @@ Register $\kid$ on \pbc{} by calling $$register\kid(H(Nin), \kid^{-1}("register\
 \end{lstlisting}
 \xdef\tpd{\the\prevdepth}
 \end{minipage}
+
+\item[] \underline{Pseudo-circom code}
+
+\hfill\begin{minipage}{\dimexpr\textwidth-20px}
+\begin{lstlisting}[language=circom]
+pragma circom 2.0.0;
+
+template NinOwnsKid(){
+	//TODO: What happens to uint256 when converted to signal
+
+	//public:
+	signal input hNin;
+	signal input vKid;
+
+	//private:
+	
+	//Take Kid
+	//Take CA
+
+	
+	
+}
+component main { public [hNin,vKid]} = NinOwnsKid();
+\end{lstlisting}
+\xdef\tpd{\the\prevdepth}
+\end{minipage}
+
 \item[] \underline{Features}
     \begin{itemize}
       \item[] \textbf{Sybil resistance} \\ A Person is prevented from registering more than one $\khk$, e.g. by using different identification documents issued for the same $Nin$.
