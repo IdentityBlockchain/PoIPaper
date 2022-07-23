@@ -336,19 +336,22 @@ Register $\khk$ on \pbc{} by calling $$register\khk(Nin\kid, Nin\kid\khk, proof)
 \hfill\begin{minipage}{\dimexpr\textwidth-20px}
 \begin{lstlisting}[language=Solidity]
   mapping(uint => uint) public ninKidKpUsed;
+	mapping(uint => bool) public isPerson;
 
   function registerKp(
     uint hNinKid,
     uint hNinKidKp,
+		uint Kp,
 		uint[2] memory proofPointA,
 		uint[2][2] memory proofPointsB,
 		uint[2] memory proofPointC
   ) public {
 		
 		//Setting public arguments
-		uint[] memory inputValues = new uint[](2)
+		uint[] memory inputValues = new uint[](3)
 		inputValues[0] = hNinKid;
 		inputValues[1] = hNinKidKp;
+		inputValues[2] = Kp;
 
 
 		require(
@@ -361,6 +364,7 @@ Register $\khk$ on \pbc{} by calling $$register\khk(Nin\kid, Nin\kid\khk, proof)
 		);
 		
     ninKidKpUsed[hNinKid] = hNinKidKp;
+		isPerson[Kp]=true;
   }
 \end{lstlisting}
 \xdef\tpd{\the\prevdepth}
@@ -391,7 +395,11 @@ Hashing connects arguments, and makes them opaque without the knowledge of argum
 \underline{Pseudo-circom code}
 Statements we need to check:
 \begin{itemize}
-	\item CA
+	\item Check first step (Register $\kid$) still valid
+	\item Check hNinKid valid
+	\item Check hNinKidKp valid
+	\item Check Kp valid
+	\item TODO: Kp invalidation!?
 \end{itemize}
 
 \newpage
