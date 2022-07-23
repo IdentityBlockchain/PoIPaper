@@ -295,7 +295,7 @@ component main { public [hNin,vKid]} = NinOwnsKid();
 \item[] \underline{Remarks}
 \begin{itemize}
 \item[i)] An entity that knows $\kid$, e.g. the CA who certified the corresponding eID, can know that the Person has registered $\kid$ on \pbc{}.
-\item[ii)] Reasoning for the choice of arguments: if $H(Nin, \kid^{-1}("register\kid"))$ was used as an argument, then TODO. On the other hand, the choice of arguments $Nin$ and $\kid^{-1}("register\kid")$ would TODO.
+\item[ii)] Reasoning for the choice of arguments: if $H(Nin, \kid^{-1}("register\kid"))$ was used as an argument, then if someone tried to register with two different ids, we couldn't tell if $Nin$ was already used. On the other hand, the choice of arguments $Nin$ and $\kid^{-1}("register\kid")$ would be almost the same as $hNin$ and $\kid^{-1}("register\kid")$, because you can brute force all the possible $Nin$s and find the corresponding $hNins$.
 \end{itemize}
 \end{enumerate}
 
@@ -346,14 +346,22 @@ Register $\khk$ on \pbc{} by calling $$register\khk(Nin\kid, Nin\kid\khk, proof)
 
 \item[] \underline{Remarks}
 \begin{itemize}
-\item[i)] Reasoning behind the choice of arguments: TODO
+\item[i)] Reasoning behind the choice of arguments:
+We want to connect $Nin$ with $\khk$ in a unique, but untraceable way.
+If we only used $Nin\kid\khk$ then if someone used multiple $\khk$s we wouldn't be able to prove the connection to $Nin$ (i.e. they could register a lot of $\khk$s).
+Hashing connects arguments, and makes them opaque without the knowledge of arguments (which in this case include private keys), so the arguments are opaque without the knowledge of private keys.
 \end{itemize}
 
 
 \end{enumerate}
 
 \newpage
-\section{zkp code}
+\underline{Pseudo-circom code}
+Statements we need to check:
+\begin{itemize}
+	\item CA
+\end{itemize}
+
 \begin{lstlisting}
 //pseudo zokrates zk-SNARK
 import "hashes/sha256/512bitPacked" as sha256packed
