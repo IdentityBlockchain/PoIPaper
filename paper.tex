@@ -335,23 +335,32 @@ Register $\khk$ on \pbc{} by calling $$register\khk(Nin\kid, Nin\kid\khk, proof)
 
 \hfill\begin{minipage}{\dimexpr\textwidth-20px}
 \begin{lstlisting}[language=Solidity]
-  mapping(uint256 => uint256) public ninKidKpUsed;
-  mapping(uint256 => bool) public kpInvalid;
-  mapping(uint256 => uint256) public ninKidKpLastConfirmed;
+  mapping(uint => uint) public ninKidKpUsed;
 
   function registerKp(
-    uint256 ninKid,
-    uint256 ninKidKp,
-    bytes proof
+    uint hNinKid,
+    uint hNinKidKp,
+		uint[2] memory proofPointA,
+		uint[2][2] memory proofPointsB,
+		uint[2] memory proofPointC
   ) public {
-    uint256 previousKey = ninKidKpUsed[ninKid];
-    if (previousKey == ninKid) return; // already registered
-    bool ok = zksnarkverify(VK, [ninKid, ninKidKp], proof); // VK = verification key
-    if (ok && !kpInvalid[ninKidKp]) {
-      if (previousKey != 0) kpInvalid[previousKey] = true;
-      ninKidKpUsed[ninKid] = ninKidKp;
-      ninKidKpLastConfirmed[ninKid] = block.number;
-    }
+		
+		//Setting public arguments
+		uint[] memory inputValues = new uint[](2)
+		inputValues[0] = hNinKid;
+		inputValues[1] = hNinKidKp;
+
+
+		require(
+			verifyProof(
+				proofPointA,
+				proofPointsB,
+				proofPointC,
+				inputValues
+			)
+		);
+		
+    ninKidKpUsed[hNinKid] = hNinKidKp;
   }
 \end{lstlisting}
 \xdef\tpd{\the\prevdepth}
