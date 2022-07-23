@@ -139,21 +139,44 @@ Register $\kid$ on \pbc{} by calling $$register\kid(H(Nin), \kid^{-1}("register\
 
 \hfill\begin{minipage}{\dimexpr\textwidth-20px}
 \begin{lstlisting}[language=Solidity]
-  mapping(uint256 => uint256) public ninKidUsed;
-  mapping(uint256 => bool) public kidInvalid;
+  mapping(uint => uint) public ninKidUsed;
+  mapping(uint => bool) public kidInvalid;
 
   function registerKid(
-    uint256 hNin, // hNin = H(Nin)
-    uint256 vKid, // vKid = KidPrivate("registerKid")
-    bytes proofNinOwnsKid
+    uint hNin, // hNin = H(Nin)
+    uint vKid, // vKid = KidPrivate("registerKid")
+		uint[2] memory proofPointA,
+		uint[2][2] memory proofPointB,
+		uint[2] memory proofPointC,
+		bool invalidate
   ) public {
-    uint256 previousKey = ninKidUsed[hNin];
+		//Setting public arguments
+		uint[] memory inputValues = new uint[](2)
+		inputValues[0] = hNin;
+		inputValues[1] = vKid;
+
+		require(
+			verifyProof(
+				proofPointA,
+				proofPointB,
+				proofPointC,
+				inputValues
+			)
+		);
+
+
+    uint previousKey = ninKidUsed[hNin];
     if (previousKey == vKid) return; // already registered
-    bool isOwner = zksnarkverify(VK, [hNin, vKid], proofNinOwnsKid); // VK = verification key
-    if (isOwner && !kidInvalid[vKid]) {
-      if (previousKey != 0) kidInvalid[previousKey] = true;
-      ninKidUsed[hNin] = vKid;
-    }
+
+
+ 		uint previousVKid = ninKidUsed[hNin];
+    if (previousVKid != vKid and invalidate == true) {
+			//If they are different, we need to invalidate old Kid
+			kidInvalid[previousVKid] = true;
+		}
+		require(!kidInvalid[vKid]);
+
+    ninKidUsed[hNin] = vKid;
   }
 \end{lstlisting}
 \xdef\tpd{\the\prevdepth}
