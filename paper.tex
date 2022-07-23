@@ -161,21 +161,39 @@ Register $\kid$ on \pbc{} by calling $$register\kid(H(Nin), \kid^{-1}("register\
 
 \item[] \underline{Pseudo-circom code}
 
-\hfill\begin{minipage}{\dimexpr\textwidth-20px}
 Using https://github.com/zkp-application/circom-rsa-verify for now, MIT license.
-Which probably doesn't work, we should check (sha256?).
-The next line is used on a file of shape:
------BEGIN PUBLIC KEY-----
-...
------END PUBLIC KEY-----
------BEGIN CERTIFICATE-----
-...
------END CERTIFICATE-----
-We assume: 
-	modulus = Subject Modulus
-	exp = Subject Exponent
+Which probably doesn't work, we should check (sha256?). \\
+The next line is used on a file of shape:\\
+-----BEGIN PUBLIC KEY-----\\
+...\\
+-----END PUBLIC KEY-----\\
+-----BEGIN CERTIFICATE-----\\
+...\\
+-----END CERTIFICATE-----\\
+We assume: \\
+	modulus = Subject Modulus\\
+	exp = Subject Exponent\\
+openssl x509 -in Identification.pem -text -noout\\
 
-openssl x509 -in Identification.pem -text -noout
+Statements we need to check:
+\begin{itemize}
+	\item CA is an accepted CA by \pbc{}
+		\begin{itemize}
+			\item A set representation  exists on blockchain which contains CA public keys (CA-public-keys).
+			\item Verify inclusion of the CA in cert in CA-public-keys.
+			\item A set representation exists on blockchain which has all the revoked CA public keys (Revoked-CA-public-keys).
+			\item Verify exclusion of the CA in cert from Revoked-CA-public-keys.
+			\item Verify CA validity with respect to time (maybe blockchain)
+		\end{itemize}
+	\item Cert CA signed 
+		\begin{itemize}
+			\item the Kid
+			\item x509 Subject that contains Nin in the right place in the subject
+			\item verify Validity of x509 cert with respect to time
+		\end{itemize}
+	\item Kid is not on revoked certs list by CA (blockchain hosted list)
+	\item Kid decrypts vKid into clear text "registerKid".
+\end{itemize}
 
 \begin{lstlisting}[language=circom]
 pragma circom 2.0.0;
@@ -191,7 +209,8 @@ template NinOwnsKid(
 		rsaNumberOfWords, 
 		hashNumberOfWords, 
 		lengthInBitsOfSignedMessage,
-		lengthOfNinInBits
+		lengthOfNinInBits,
+		bitsInAWord
 ){
 	//TODO: What happens to uint256 when converted to signal
 
@@ -221,15 +240,15 @@ template NinOwnsKid(
 	}
 
 	var hashed[hashNumberOfWords];//4x64 bit
-	var hashedBits[hashNumberOfWords*64];
-	for (int i=0; i<hashNumberOfWords*64;i++){
+	var hashedBits[hashNumberOfWords*bitsInAWord];
+	for (int i=0; i<hashNumberOfWords*bitsInAWord;i++){
 		hashedBits[i] <== sha.out[i];
 	}
 	component b2n = Bits2Num(64);
 	//TODO:Can we use a component multiple times?
 	//Will all the constraints be generated
 	for (int i=0;i<hashNumberOfWords;i++){
-		for (int j=0;j<64;j++){
+		for (int j=0;j<bitsInAWord;j++){
 			b2n.in[j] <== hashedBits[i*64+j];
 		}
 	  hashed[i] <== b2n.out;
@@ -237,8 +256,8 @@ template NinOwnsKid(
 
 	
 	//lets assume sha256WithRSAEncryption
-
-	component rsa = RsaVerifyPkcs1v15(64, rsaNumberOfWords, 17, 4);
+	//verify CA signature of Kid
+	component rsa = RsaVerifyPkcs1v15(bitsInAWord, rsaNumberOfWords, 17, 4);
 	for (var i = 0; i < rsaNumberOfWords; i++){
 		rsa.exp[i] <== exp[i];
 		rsa.sign[i] <== sign[i];
@@ -247,6 +266,8 @@ template NinOwnsKid(
 	for (var i = 0; i<hashNumberOfWords; i++){
 		rsa.hashed[i] <== hashed[i];
 	}
+
+	//TODO: verify Kid(vKid)=="registerKid"
 
 	//Check CA on CA approved list
 	//On blockchain mapping (uint256 => bool) public CAValid
@@ -261,7 +282,6 @@ template NinOwnsKid(
 component main { public [hNin,vKid]} = NinOwnsKid();
 \end{lstlisting}
 \xdef\tpd{\the\prevdepth}
-\end{minipage}
 
 \item[] \underline{Features}
     \begin{itemize}
