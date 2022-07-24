@@ -162,10 +162,8 @@ Register $\kid$ on \pbc{} by calling $$register\kid(H(Nin), \kid^{-1}("register\
 			verifyProof(proofPointA, proofPointB, proofPointC, inputValues)
 		);
 	
-		uint previousKey = ninKidUsed[hNin];
-		if (previousKey == vKid) return; // already registered
-	
 		uint previousVKid = ninKidUsed[hNin];
+		if (previousVKid == vKid) return; // already registered
 		if (previousVKid != vKid && invalidateKid == true) {
 			// If they are different, invalidate old Kid
 			kidInvalid[previousVKid] = true;
