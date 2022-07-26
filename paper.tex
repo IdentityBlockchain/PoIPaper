@@ -69,7 +69,7 @@
 
 \lstset{
 	language=circom,
-	backgroundcolor=\color{lightgray},
+	backgroundcolor=\color{verylightgray},
 	extendedchars=true,
 	basicstyle=\footnotesize\ttfamily,
 	showstringspaces=false,
@@ -83,7 +83,7 @@
 	captionpos=b
 }
 
-\newcommand{\khk}{K_{P}}
+\newcommand{\khk}{K_{H}}
 \newcommand{\khkp}{$K^{-1}[\text{HK}]$}
 \newcommand{\kid}{K_{ID}}
 %\newcommand{\kid}{$K$}
@@ -123,7 +123,7 @@ TODO
    $CA$ & \ \ Certificate Authority \\[3px]
    $eID$ & \ \ Electronic identification document \\[3px]
 	$\kid$ & \ \ CA-certified public key of eID\\[3px]
-  $\khk$ & \ \ Person key, unique public key used to access \pbc{}
+  $\khk$ & \ \ Human key, unique public key to access \pbc{}
 
 \end{tabular}
 
@@ -133,36 +133,90 @@ Sometimes we write $K$ for $(K, K^{-1})$.
 
 \newpage
 \section{Registering $\kid$}
-Register $\kid$ on \pbc{} by calling $$register\kid(H(Nin), \kid^{-1}("register\kid"), proofNinOwnsKid).$$
+Register $\kid$ on \pbc{} by calling $$register\kid(H(Nin), \kid^{-1}("register\kid"), invalidate\kid, verifyProofArguments).$$
 \begin{enumerate}[leftmargin=0cm]
-\item[] \underline{Pseudo-solidity code}
 
-\hfill\begin{minipage}{\dimexpr\textwidth-20px}
-\begin{lstlisting}[language=Solidity]
-  mapping(uint256 => uint256) public ninKidUsed;
-  mapping(uint256 => bool) public kidInvalid;
+	\item[] \underline{Pseudo-solidity code}
 
-  function registerKid(
-    uint256 hNin, // hNin = H(Nin)
-    uint256 vKid, // vKid = KidPrivate("registerKid")
-    bytes proofNinOwnsKid
-  ) public {
-    uint256 previousKey = ninKidUsed[hNin];
-    if (previousKey == vKid) return; // already registered
-    bool isOwner = zksnarkverify(VK, [hNin, vKid], proofNinOwnsKid); // VK = verification key
-    if (isOwner && !kidInvalid[vKid]) {
-      if (previousKey != 0) kidInvalid[previousKey] = true;
-      ninKidUsed[hNin] = vKid;
-    }
-  }
-\end{lstlisting}
-\xdef\tpd{\the\prevdepth}
-\end{minipage}
+	\hfill\begin{minipage}{\dimexpr\textwidth-20px}
+	\begin{lstlisting}[language=Solidity]
+	pragma solidity ^0.8.0;
+		
+	mapping(uint => uint) public ninKidUsed;
+	mapping(uint => bool) public kidInvalid;
+	
+	function registerKid(
+		uint hNin, // hNin = H(Nin)
+		uint vKid, // vKid = KidPrivate("registerKid")
+		bool invalidateKid,
+		uint[2] memory proofPointA,
+		uint[2][2] memory proofPointB,
+		uint[2] memory proofPointC
+	) public {
+		// Setting public arguments
+		uint[] memory inputValues = new uint[](2);
+		inputValues[0] = hNin;
+		inputValues[1] = vKid;
+	
+		require(
+			verifyProof(proofPointA, proofPointB, proofPointC, inputValues)
+		);
+	
+		uint previousVKid = ninKidUsed[hNin];
+		if (previousVKid == vKid) return; // already registered
+		if (previousVKid != vKid && invalidateKid == true) {
+			// If they are different, invalidate old Kid
+			kidInvalid[previousVKid] = true;
+		}
+		require(!kidInvalid[vKid]);
+	
+		ninKidUsed[hNin] = vKid;
+	}
+	\end{lstlisting}
+	\xdef\tpd{\the\prevdepth}
+	\end{minipage}
+
+	\item[] Features
+    \begin{itemize}
+      \item[] \textbf{Sybil resistance} \\ A Person is prevented from registering more than one $\khk$, e.g. by using different eIDs issued for the same $Nin$.
+          \vspace{5px}
+      \item[] \textbf{Fix for the loss of eID} \\ A Person who has lost a previously registered $\kid$, e.g. due to loss of eID, can overwrite it by registering a new $\kid$.
+          \vspace{5px}
+      \item[] \textbf{Identity theft damage control} \\ If a Person overwrites the previous $\kid$ with a new one, the identity Thief loses access to services that verify the entire identity chain.
+    \end{itemize}
+
+\item[] Remarks
+\begin{itemize}
+\item[i)] An entity that knows $\kid$, e.g. the CA who certified the corresponding eID, can know that the Person has registered $\kid$ on \pbc{}.
+\item[ii)] Reasoning for the choice of arguments $H(Nin)$ and $\kid^{-1}("register\kid")$: 
+\begin{itemize}
+	\item[-] if $H(Nin, \kid^{-1}("register\kid"))$ was instead used, then if someone tried to register with two different eIDs, we couldn't tell if $Nin$ was already used. 
+	\item[-] the choice of arguments $Nin$ and $\kid^{-1}("register\kid")$ would be almost the same as $H(Nin)$ and $\kid^{-1}("register\kid")$, because you can brute force all the possible $Nin$s and find the corresponding $H(Nin)$s.
+\end{itemize}
+\end{itemize}
 
 \item[] \underline{Pseudo-circom code}
 
-Using https://github.com/zkp-application/circom-rsa-verify for now, MIT license.
-Which probably doesn't work, we should check (sha256?). \\
+Statements we need to check:
+\begin{itemize}
+	\item[1)] CA is accepted by \pbc{} (assumption: the set representations of \textit{CA-public-keys} and \textit{revoked-CA-public-keys} lists exist on \pbc{}):
+		\begin{itemize}
+			\item[i)] inclusion of the CA in cert in \textit{CA-public-keys}.
+			\item[ii)] exclusion of the CA in cert from \textit{revoked-CA-public-keys}.
+		\end{itemize}
+		Verify CA validity with respect to time (maybe on \pbc{})!
+	\item[2)] Cert CA signed: 
+		\begin{itemize}
+			\item[i)] $\kid$
+			\item[ii)] x509 Subject that contains $Nin$ in the right place in the subject
+		\end{itemize}
+		Verify validity of x509 certificate with respect to time!
+		\item[3)] $\kid$ is not revoked by CA (\pbc{} hosted list)
+	\item[4)] $\kid$ decrypts $\kid^{-1}("register\kid")$ into clear text "registerKid".
+\end{itemize}
+
+For now, we're using the MIT-licensed \href{https://github.com/zkp-application/circom-rsa-verify}{Circom RSA signature verify}, which probably doesn't work - we should check (sha256?). \\
+
 The next line is used on a file of shape:\\
 -----BEGIN PUBLIC KEY-----\\
 ...\\
@@ -170,30 +224,11 @@ The next line is used on a file of shape:\\
 -----BEGIN CERTIFICATE-----\\
 ...\\
 -----END CERTIFICATE-----\\
+
 We assume: \\
 	modulus = Subject Modulus\\
 	exp = Subject Exponent\\
 openssl x509 -in Identification.pem -text -noout\\
-
-Statements we need to check:
-\begin{itemize}
-	\item CA is an accepted CA by \pbc{}
-		\begin{itemize}
-			\item A set representation  exists on blockchain which contains CA public keys (CA-public-keys).
-			\item Verify inclusion of the CA in cert in CA-public-keys.
-			\item A set representation exists on blockchain which has all the revoked CA public keys (Revoked-CA-public-keys).
-			\item Verify exclusion of the CA in cert from Revoked-CA-public-keys.
-			\item Verify CA validity with respect to time (maybe blockchain)
-		\end{itemize}
-	\item Cert CA signed 
-		\begin{itemize}
-			\item the Kid
-			\item x509 Subject that contains Nin in the right place in the subject
-			\item verify Validity of x509 cert with respect to time
-		\end{itemize}
-	\item Kid is not on revoked certs list by CA (blockchain hosted list)
-	\item Kid decrypts vKid into clear text "registerKid".
-\end{itemize}
 
 \begin{lstlisting}[language=circom]
 pragma circom 2.0.0;
@@ -221,7 +256,7 @@ template NinOwnsKid(
 	//private:
 	signal input Nin;
 	//Kid, CA signature
-	singal input exp[rsaNumberOfWords];
+	signal input exp[rsaNumberOfWords];
 	signal input sign[rsaNumberOfWords];
 	signal input modulus[rsaNumberOfWords];
 
@@ -232,7 +267,6 @@ template NinOwnsKid(
 
 	//TODO: Insert Nin into messageToBeSigned in the right place
 	//or create constraint on the corresponding bits
-
 
 	component sha = Sha256(lengthInBitsOfSignedMessage);
 	for (int i = 0; i<lengthInBitsOfSignedMessage; i++) {
@@ -254,7 +288,6 @@ template NinOwnsKid(
 	  hashed[i] <== b2n.out;
 	}
 
-	
 	//lets assume sha256WithRSAEncryption
 	//verify CA signature of Kid
 	component rsa = RsaVerifyPkcs1v15(bitsInAWord, rsaNumberOfWords, 17, 4);
@@ -271,174 +304,94 @@ template NinOwnsKid(
 
 	//Check CA on CA approved list
 	//On blockchain mapping (uint256 => bool) public CAValid
-
 	
 	//Take Kid
 	//Take CA
-
-	
 	
 }
 component main { public [hNin,vKid]} = NinOwnsKid();
 \end{lstlisting}
 \xdef\tpd{\the\prevdepth}
 
-\item[] \underline{Features}
-    \begin{itemize}
-      \item[] \textbf{Sybil resistance} \\ A Person is prevented from registering more than one $\khk$, e.g. by using different identification documents issued for the same $Nin$.
-          \vspace{5px}
-      \item[] \textbf{Fix for the loss of eID} \\ A Person who has lost a previously registered $\kid$, e.g. due to loss of eID, can overwrite it by registering a new $\kid$.
-          \vspace{5px}
-      \item[] \textbf{Identity theft damage control} \\ If a Person overwrites the previous $\kid$ with a new one, the identity Thief loses access to services that verify the entire identity chain.
-    \end{itemize}
-
-\item[] \underline{Remarks}
-\begin{itemize}
-\item[i)] An entity that knows $\kid$, e.g. the CA who certified the corresponding eID, can know that the Person has registered $\kid$ on \pbc{}.
-\item[ii)] Reasoning for the choice of arguments: if $H(Nin, \kid^{-1}("register\kid"))$ was used as an argument, then if someone tried to register with two different ids, we couldn't tell if $Nin$ was already used. On the other hand, the choice of arguments $Nin$ and $\kid^{-1}("register\kid")$ would be almost the same as $hNin$ and $\kid^{-1}("register\kid")$, because you can brute force all the possible $Nin$s and find the corresponding $hNins$.
-\end{itemize}
 \end{enumerate}
 
 \newpage
 \section{Registering $\khk$}
-Register $\khk$ on \pbc{} by calling $$register\khk(Nin\kid, Nin\kid\khk, proof),$$
+Register $\khk$ on \pbc{} by calling $$register\khk(HNin\kid, HNin\kid\khk, \khk, verifyProofArguments),$$
   where:
     \begin{enumerate}
-      \item[] $Nin\kid=H(Nin,\kid^{-1}("register\khk"))$
-      \item[] $Nin\kid\khk=H(Nin, \kid^{-1}("register\khk"), \khk^{-1}("register\khk"))$.
+      \item[] $HNin\kid=H(Nin,\kid^{-1}("register\khk"))$
+      \item[] $HNin\kid\khk=H(Nin, \kid^{-1}("register\khk"), \khk^{-1}("register\khk"))$.
     \end{enumerate}
 \begin{enumerate}[leftmargin=0cm]
-\item[] \underline{Pseudo-solidity code}
+	\item[] \underline{Pseudo-solidity code}
 
-\hfill\begin{minipage}{\dimexpr\textwidth-20px}
-\begin{lstlisting}[language=Solidity]
-  mapping(uint256 => uint256) public ninKidKpUsed;
-  mapping(uint256 => bool) public kpInvalid;
-  mapping(uint256 => uint256) public ninKidKpLastConfirmed;
+	\hfill\begin{minipage}{\dimexpr\textwidth-20px}
+	\begin{lstlisting}[language=Solidity]
+	mapping(uint => uint) public ninKidKhUsed;
+	mapping(uint => bool) public isPerson;
+	
+	function registerKh(
+		uint hNinKid,
+		uint hNinKidKh,
+		uint Kh,
+		uint[2] memory proofPointA,
+		uint[2][2] memory proofPointsB,
+		uint[2] memory proofPointC
+	) public {
+		//Setting public arguments
+		uint[] memory inputValues = new uint[](3);
+		inputValues[0] = hNinKid;
+		inputValues[1] = hNinKidKh;
+		inputValues[2] = Kh;
+	
+		require(
+			verifyProof(proofPointA, proofPointsB, proofPointC, inputValues)
+		);
+	
+		ninKidKhUsed[hNinKid] = hNinKidKh;
+		isPerson[Kh] = true;
+	}
+	\end{lstlisting}
+	\xdef\tpd{\the\prevdepth}
+	\end{minipage}
 
-  function registerKp(
-    uint256 ninKid,
-    uint256 ninKidKp,
-    bytes proof
-  ) public {
-    uint256 previousKey = ninKidKpUsed[ninKid];
-    if (previousKey == ninKid) return; // already registered
-    bool ok = zksnarkverify(VK, [ninKid, ninKidKp], proof); // VK = verification key
-    if (ok && !kpInvalid[ninKidKp]) {
-      if (previousKey != 0) kpInvalid[previousKey] = true;
-      ninKidKpUsed[ninKid] = ninKidKp;
-      ninKidKpLastConfirmed[ninKid] = block.number;
-    }
-  }
+	\item[] Features
+	\begin{itemize}
+		  \item[] \textbf{Sybil resistance} \\ $\khk$ is a unique public key bound to the Person on the \pbc{}. By design, the Person cannot have two valid $\khk$ keys at the same time.
+	
+		  TODO: Explanation/proof.
+		  \vspace{5px}
+		\item[] \textbf{Anonimity} \\ No one who has a database with all public keys $\kid$ or/and public keys $\khk$ can tell, from the function call, which $Nin$, $\kid$ or $\khk$ was used. This is true under the assumption that CA, which certified the eID, does not have access to $\kid^{-1}$, i.e. that $\kid$ was securely generated on the eID.
+	
+		TODO: Explanation/proof.
+	\end{itemize}
+	
+	\item[] Remarks
+	\begin{itemize}
+	\item[i)] Reasoning behind the choice of arguments:
+	We want to connect $Nin$ with $\khk$ in a unique, but untraceable way.
+	If we only used $HNin\kid\khk$ then if someone used multiple $\khk$s we wouldn't be able to prove the connection to $Nin$ (i.e. they could register a lot of $\khk$s).
+	Hashing connects arguments, and makes them opaque without the knowledge of arguments (which in this case include private keys), so the arguments are opaque without the knowledge of private keys.
+	\end{itemize}
+
+\item[] \underline{Pseudo-circom code}
+
+Statements we need to check:
+\begin{itemize}
+	\item[1)] $register\kid$ is still valid
+	\item[2)] $HNin\kid$ is valid
+	\item[3)] $HNin\kid\khk$ is valid
+	\item[4)] $\khk$ is valid
+	\item[5)] TODO: $\khk$ invalidation!?
+\end{itemize}
+
+\begin{lstlisting}[language=circom]
+	pragma circom 2.0.0;
 \end{lstlisting}
-\xdef\tpd{\the\prevdepth}
-\end{minipage}
-\item[] \underline{Features}
-\begin{itemize}
-      \item[] \textbf{Sybil resistance} \\ $\khk$ is a unique public key bound to the Person on the \pbc{}. By design, the Person cannot have two valid $\khk$ keys at the same time.
-
-      TODO: Explanation/proof.
-      \vspace{5px}
-    \item[] \textbf{Anonimity} \\ No one who has a database with all public keys $\kid$ or/and public keys $\khk$ can tell, from the function call, which $Nin$, $\kid$ or $\khk$ was used. This is true under the assumption that CA, which certified the eID, does not have access to $\kid^{-1}$, i.e. that $\kid$ was securely generated on the eID.
-
-    TODO: Explanation/proof.
-\end{itemize}
-
-\item[] \underline{Remarks}
-\begin{itemize}
-\item[i)] Reasoning behind the choice of arguments:
-We want to connect $Nin$ with $\khk$ in a unique, but untraceable way.
-If we only used $Nin\kid\khk$ then if someone used multiple $\khk$s we wouldn't be able to prove the connection to $Nin$ (i.e. they could register a lot of $\khk$s).
-Hashing connects arguments, and makes them opaque without the knowledge of arguments (which in this case include private keys), so the arguments are opaque without the knowledge of private keys.
-\end{itemize}
-
 
 \end{enumerate}
 
-\newpage
-\underline{Pseudo-circom code}
-Statements we need to check:
-\begin{itemize}
-	\item CA
-\end{itemize}
-
-\begin{lstlisting}
-//pseudo zokrates zk-SNARK
-import "hashes/sha256/512bitPacked" as sha256packed
-import "ecc/babyjubjubParams.code" as context
-import "ecc/proofOfOwnership.code" as proofOfOwnership
-
-def proofPINOwnsK(
-  field[2] PINHash,
-  field[2] K_1Hash,
-  field[2]
-
-  private field[?] CACert){
-}
-
-def proof_of_being_a_person(
-  //publically known arguments
-  field[2] PINKeyUsedHash,
-  field[2] PINKeyPersonKeyIssuedHash,
-  field[2] PersonKeyInvalidHash,
-  field[2] KeyInvalidHash,
-
-  //BC state
-  field BC_PINUsed,//BC State
-  field BC_PINKeyUsed,//BC State
-  field BC_PINKeyPersonKeyIssued,//BC State
-  field BC_PersonKeyInvalid,//BC State
-  field BC_KeyInvalid,//BC State
-  ?field BC_private_key_challenge?
-
-  //CA keys!
-  field[?][?] CAKeys,//? BC State
-  ...
-
-  //private data
-  //15360 bit RSA key is equivalent to 256-bit symmetric keys
-  //2048 bit RSA key is equivalent to 112 bit symmetric keys
-  //eID has 2048 bit RSA
-  private field PIN,//max 254 bits, using only 128 = 16 bytes
-  private field K_private_bc_new,//ECC private key
-  private field[?] K_new,//public RSA key from eID
-  private field[?] K_1_new,//private RSA key from eID, actually signed message
-  //K_1_new("PeopleBC person proof")
-  private field K_private_bc_old,//ECC private key, old
-  private field[?] K_1_old)//K_1_old("PeopleBC person proof")?
-  //?private field[2] K_bc_new,//ECC public key ?no need for key pair verification?
-  //?private field[2] K_bc_old,//ECC public key ?no need for key pair verification
-  private field[?] CAcert,
-  private field CAindex
-{
-  //actual checking code here
-  field[2] hash_PIN = sha256packed([0,0,0,PIN])
-  assert(hash_PIN == PINHash);//proving that we know the real PIN, unimportant
-
-  //proving ownership of newly registered key,
-  //no real need to prove ownership of bc key
-  //we actually need to prove ownereship of K_1_new,
-  //and its connection to PIN via CA
-  context=context()//babyjubjubParams context
-  proofOfOwnership(K_bc_new, K_private_bc_new, context)==1
-
-  //prove that you own the K_new
-  //pseudo
-  RSADecrypt(K_new, K_1_new) == "PeopleBC Person Proof";//?+BC_private_key_challenge;
-
-  //proove that Key is connected to CA
-  //pseudo
-  checkCASignature(CAKey[CAindex], CACert, K_new) == 1;
-
-  //proove that K_new is PIN certificate
-  //pseudo
-  extractPIN(CACert)==PIN;
-
-  //end
-
-  //end..
-}
-\end{lstlisting}
 \newpage
 \section{Problems}
 \begin{enumerate}[label=\textbf{P\arabic*}]
