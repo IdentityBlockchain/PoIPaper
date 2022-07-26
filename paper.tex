@@ -132,55 +132,29 @@ TODO
 Sometimes we write $K$ for $(K, K^{-1})$.
 
 \newpage
-\section{Registering identity key ($\khk$)}
+\section{Registering $\kid$}
 Register $\kid$ on \pbc{} by calling $$register\kid(H(Nin), \kid^{-1}("register\kid"), proofNinOwnsKid).$$
 \begin{enumerate}[leftmargin=0cm]
 \item[] \underline{Pseudo-solidity code}
 
 \hfill\begin{minipage}{\dimexpr\textwidth-20px}
 \begin{lstlisting}[language=Solidity]
-  mapping(uint => uint) public ninKidUsed;
-	mapping(uint => uint) public ninKidKpUsed;
-  mapping(uint => bool) public kidInvalid;
+  mapping(uint256 => uint256) public ninKidUsed;
+  mapping(uint256 => bool) public kidInvalid;
 
-  function register(
-    uint hNin, // hNin = H(Nin)
-		uint hNinKid,
-		uint hNinKidKp,
-		bool invalidate, //true if someone stole your previous id
-		uint[2] memory proofPointA,
-		uint[2][2] memory proofPointsB,
-		uint[2] memory proofPointC,
+  function registerKid(
+    uint256 hNin, // hNin = H(Nin)
+    uint256 vKid, // vKid = KidPrivate("registerKid")
+    bytes proofNinOwnsKid
   ) public {
-		//Setting public arguments
-		uint[] memory inputValues = new uint[](3);
-		inputValues[0]=hNin;
-		inputValues[1]=hNinKid;
-		inputValues[2]=hNinKidKp;
-
-
-    require(verifyProof(
-			proofPointA,
-			proofPointsB,
-			proofPointC,
-			inputValues
-		));
-
-
-    uint previousHNinKid = ninKidUsed[hNin];
-    if (previousHNinKid != hNinKid and invalidate == true) {
-			//If they are different, we need to invalidate old Kid
-			kidInvalid[previousHNinKid] = true;
-		}
-		require(!kidInvalid[hNinKid]);
-
-
-		ninKidUsed[hNin] = hNinKid;
-
-		ninKidKpUsed[hNinKid] = hNinKidKp;
-
+    uint256 previousKey = ninKidUsed[hNin];
+    if (previousKey == vKid) return; // already registered
+    bool isOwner = zksnarkverify(VK, [hNin, vKid], proofNinOwnsKid); // VK = verification key
+    if (isOwner && !kidInvalid[vKid]) {
+      if (previousKey != 0) kidInvalid[previousKey] = true;
+      ninKidUsed[hNin] = vKid;
+    }
   }
-
 \end{lstlisting}
 \xdef\tpd{\the\prevdepth}
 \end{minipage}
@@ -385,8 +359,7 @@ Hashing connects arguments, and makes them opaque without the knowledge of argum
 \underline{Pseudo-circom code}
 Statements we need to check:
 \begin{itemize}
-	\item Check first step (Register $\kid$) still valid
-
+	\item CA
 \end{itemize}
 
 \begin{lstlisting}
